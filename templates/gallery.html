@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Galerie{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+    
+    .gallery-item {
+        margin-bottom: 30px;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    
+    .gallery-item img {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        transition: transform 0.3s;
+        cursor: pointer;
+    }
+    
+    .gallery-item:hover img {
+        transform: scale(1.05);
+    }
+    
+    .gallery-item .caption {
+        padding: 15px;
+        background: white;
+    }
+    
+    .gallery-item .caption h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .gallery-item .caption p {
+        margin: 5px 0 0;
+        color: #666;
+    }
+
+    /* Modal styles */
+    .modal-dialog {
+        max-width: 90%;
+        margin: 1.75rem auto;
+    }
+
+    .modal-content {
+        background: transparent;
+        border: none;
+    }
+
+    .modal-header {
+        border: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .modal-body {
+        padding: 0;
+        text-align: center;
+    }
+
+    .modal-body img {
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+    }
+
+    .modal-title {
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        font-size: 1.5rem;
+        margin: 0 auto;
+    }
+
+    .modal-description {
+        color: white;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        position: absolute;
+        bottom: 1rem;
+        left: 0;
+        right: 0;
+        text-align: center;
+        padding: 0 1rem;
+    }
+
+    .btn-close {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        background: white;
+        opacity: 1;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        z-index: 9999;
+    }
+
+    .btn-close:hover {
+        background: #ff4444;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Galerie</h1>
+                <p class="lead">Fotografie z našeho sadu a aktivit</p>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if images %}
+                {% for image in images %}
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                    <div class="gallery-item">
+                        <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                             alt="{{ image.title or 'Fotografie' }}"
+                             data-bs-toggle="modal"
+                             data-bs-target="#imageModal{{ image.id }}"
+                             class="gallery-image"
+                             data-fallback="{{ url_for('static', filename='img/placeholder.jpg') }}">
+                        <div class="caption">
+                            {% if image.title %}
+                            <h3>{{ image.title }}</h3>
+                            {% endif %}
+                            {% if image.description %}
+                            <p>{{ image.description }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal for each image -->
+                <div class="modal fade" id="imageModal{{ image.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                {% if image.title %}
+                                <h5 class="modal-title">{{ image.title }}</h5>
+                                {% endif %}
+                            </div>
+                            <div class="modal-body">
+                                <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                                     alt="{{ image.title or 'Fotografie' }}"
+                                     class="gallery-image"
+                                     data-fallback="{{ url_for('static', filename='img/placeholder.jpg') }}">
+                                {% if image.description %}
+                                <div class="modal-description">{{ image.description }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">×</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p>Zatím nejsou k dispozici žádné fotografie.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal.show');
+            modals.forEach(modal => {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            });
+        }
+    });
+
+    // Handle image loading errors
+    document.querySelectorAll('.gallery-image').forEach(img => {
+        img.onerror = function() {
+            this.onerror = null;
+            this.src = this.dataset.fallback;
+        };
+    });
+</script>
+{% endblock %} 

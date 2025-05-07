@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Správa galerie{% endblock %}
+
+{% block extra_css %}
+<style>
+    .image-checkbox {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
+    }
+    
+    .card {
+        position: relative;
+    }
+    
+    .card.selected {
+        border: 2px solid #007bff;
+    }
+    
+    .bulk-actions {
+        display: none;
+        margin-bottom: 20px;
+    }
+    
+    .bulk-actions.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Správa galerie</h1>
+                <p class="lead">Spravujte fotografie v galerii</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Přidat fotografii
+                    </a>
+                </div>
+                <div class="bulk-actions">
+                    <button id="bulkDeleteBtn" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Smazat vybrané
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            {% if images %}
+                {% for image in images %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <input type="checkbox" class="image-checkbox" data-id="{{ image.id }}">
+                        <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" class="card-img-top" alt="{{ image.title }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ image.title }}</h5>
+                            {% if image.description %}
+                            <p class="card-text">{{ image.description }}</p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('edit_image', id=image.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Upravit
+                                </a>
+                                <form action="{{ url_for('delete_image', id=image.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Opravdu chcete smazat tuto fotografii?')">
+                                        <i class="bi bi-trash"></i> Smazat
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12 text-center">
+                    <p>Zatím nejsou k dispozici žádné fotografie.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.image-checkbox');
+    const bulkActions = document.querySelector('.bulk-actions');
+    const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const card = this.closest('.card');
+            if (this.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+            
+            // Show/hide bulk actions
+            const checkedCount = document.querySelectorAll('.image-checkbox:checked').length;
+            if (checkedCount > 0) {
+                bulkActions.classList.add('show');
+            } else {
+                bulkActions.classList.remove('show');
+            }
+        });
+    });
+    
+    bulkDeleteBtn.addEventListener('click', function() {
+        const selectedIds = Array.from(document.querySelectorAll('.image-checkbox:checked'))
+            .map(checkbox => checkbox.dataset.id);
+            
+        if (selectedIds.length > 0) {
+            if (confirm(`Opravdu chcete smazat ${selectedIds.length} vybraných fotografií?`)) {
+                // Send delete request for each selected image
+                selectedIds.forEach(id => {
+                    fetch(`/admin/gallery/${id}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            // Remove the card from the page
+                            const card = document.querySelector(`.image-checkbox[data-id="${id}"]`).closest('.col-md-4');
+                            card.remove();
+                            
+                            // Update bulk actions visibility
+                            const checkedCount = document.querySelectorAll('.image-checkbox:checked').length;
+                            if (checkedCount === 0) {
+                                bulkActions.classList.remove('show');
+                            }
+                        }
+                    });
+                });
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Kontakt{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+    
+    .contact-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        padding: 30px;
+        height: 100%;
+    }
+    
+    .contact-info {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .contact-info li {
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .contact-info li:last-child {
+        border-bottom: none;
+    }
+    
+    .contact-info i {
+        color: #0d6efd;
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Kontakt</h1>
+                <p class="lead">Kontaktujte nás</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4" data-aos="fade-right">
+                <div class="contact-card">
+                    <h2>Kontaktní formulář</h2>
+                    <p>Máte-li jakékoliv dotazy nebo připomínky, neváhejte nás kontaktovat pomocí formuláře níže.</p>
+                    
+                    <form method="POST" action="{{ url_for('contact') }}">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label") }}
+                            {{ form.message(class="form-control", rows=5) }}
+                        </div>
+                        {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4" data-aos="fade-left">
+                <div class="contact-card">
+                    <h2>Kontaktní informace</h2>
+                    <p>Spolek singulárních podílníků Třešinky Cetechovice</p>
+                    
+                    <ul class="contact-info">
+                        <li>
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <strong>Adresa:</strong><br>
+                            Cetechovice 45, 768 02 Cetechovice
+                        </li>
+                        <li>
+                            <i class="bi bi-envelope-fill"></i>
+                            <strong>E-mail:</strong><br>
+                            <a href="mailto:tresinky-cetechovice@seznam.cz">tresinky-cetechovice@seznam.cz</a>
+                        </li>
+                        <li>
+                            <i class="bi bi-building"></i>
+                            <strong>IČ:</strong> 06961916
+                        </li>
+                    </ul>
+                    
+                    <h3 class="mt-4">Co můžeme udělat pro vás</h3>
+                    <p>Sad je veřejně přístupný, ale pokud by se chtěl někdo dovědět více, popřípadě se sejít na místě samém, může nás kontaktovat a budeme hledat vhodný termín setkání a provedení sadem.</p>
+                    <p>Vážným zájemcům můžeme poskytnout rouby konkrétních odrůd a nebo dohodnuté odrůdy přímo napěstovat. Zájemce pak uhradí finanční náklady s tím spojené.</p>
+                    <p>V neposlední řadě Vám můžeme být inspirací. Rádi se podělíme o své zkušenosti.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Podpora{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+    
+    .donation-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .donation-amounts {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .donation-amount {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        border: 2px solid #dee2e6;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .donation-amount:hover,
+    .donation-amount.active {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    
+    .donation-amount input {
+        display: none;
+    }
+    
+    .help-options {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .help-options li {
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .help-options li:last-child {
+        border-bottom: none;
+    }
+    
+    .help-options i {
+        color: #0d6efd;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Podpořte nás</h1>
+                <p class="lead">Pomozte nám v naší činnosti</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="donation-card">
+                    <h2>Finanční podpora</h2>
+                    <p>Pokud by někdo chtěl naši práci podpořit finančně, zřídili jsme transparentní účet.</p>
+                    <p>Jsme vděčni za každý, i ten nejmenší příspěvek. Prostředky budou věnovány na získání sazenic starých odrůd, jejich výsadbě a péči o ně po výsadbě.</p>
+                    
+                    <form method="POST" action="{{ url_for('donate') }}">
+                        {{ form.csrf_token }}
+                        <div class="mb-3">
+                            <label class="form-label">Částka</label>
+                            <div class="donation-amounts">
+                                <label class="donation-amount">
+                                    <input type="radio" name="amount" value="100"> 100 Kč
+                                </label>
+                                <label class="donation-amount">
+                                    <input type="radio" name="amount" value="500"> 500 Kč
+                                </label>
+                                <label class="donation-amount">
+                                    <input type="radio" name="amount" value="1000"> 1 000 Kč
+                                </label>
+                            </div>
+                            {{ form.amount(class="form-control", placeholder="Nebo zadejte vlastní částku") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.message.label(class="form-label") }}
+                            {{ form.message(class="form-control", rows=4) }}
+                        </div>
+                        {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="donation-card">
+                    <h2>Jak nám můžete pomoci</h2>
+                    <p>Sad Třešinky je zařazen do sítě genofondových sadů v rámci České republiky. Velmi by nás potěšilo, pokud by jste věděli o starých stromech původních krajových odrůd, které bychom mohli do sadu vysadit.</p>
+                    
+                    <ul class="help-options">
+                        <li>
+                            <i class="bi bi-tree-fill"></i>
+                            <strong>Informace o starých odrůdách</strong><br>
+                            Pokud víte o starých stromech původních krajových odrůd, dejte nám vědět.
+                        </li>
+                        <li>
+                            <i class="bi bi-people-fill"></i>
+                            <strong>Dobrovolnická pomoc</strong><br>
+                            Vděčni budeme i za fyzickou pomoc dobrovolníků. Pokud máte zájem nám pomoci, pošlete svou nabídku na e-mail tresinky-cetechovice@seznam.cz.
+                        </li>
+                        <li>
+                            <i class="bi bi-share-fill"></i>
+                            <strong>Šíření informací</strong><br>
+                            Sdílejte informace o našem projektu s přáteli a známými.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+    
+    // Handle donation amount selection
+    document.querySelectorAll('.donation-amount').forEach(amount => {
+        amount.addEventListener('click', function() {
+            document.querySelectorAll('.donation-amount').forEach(a => a.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelector('#amount').value = this.querySelector('input').value;
+        });
+    });
+</script>
+{% endblock %} 

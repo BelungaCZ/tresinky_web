@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Nahrát fotografie{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">Nahrát fotografie</h1>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                
+                <div class="mb-3">
+                    {{ form.image.label(class="form-label") }}
+                    {{ form.image(class="form-control", multiple="multiple") }}
+                    <div class="form-text">Můžete vybrat více souborů najednou nebo celou složku</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.title.label(class="form-label") }}
+                    {{ form.title(class="form-control") }}
+                    <div class="form-text">Název je volitelný. Pokud není zadán, bude použit název souboru.</div>
+                </div>
+                
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control", rows="3") }}
+                </div>
+                
+                {{ form.submit(class="btn btn-primary") }}
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 
