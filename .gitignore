@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 .env
@@ -44,4 +45,41 @@ Thumbs.db
 
 # Project specific
 uploads/
-instance/ 
+instance/
+
+# Database
+instance/
+*.db
+*.sqlite3
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+log/
+
+# Media
+uploads/
+media/
+static/uploads/
+
+# env.bak/
+# venv.bak/
+# .coverage
+# .coverage.*
+# .cache
+# coverage.xml
+# *.cover
+# *.py,cover
+# .pytest_cache/ 
