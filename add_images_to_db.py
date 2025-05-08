@@ -17,7 +17,7 @@ def add_images_to_db():
         
         # Get all image files
         for filename in os.listdir(upload_folder):
-            if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.heic')):
+            if filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
                 # Check if image already exists in database
                 existing = GalleryImage.query.filter_by(filename=filename).first()
                 if not existing:

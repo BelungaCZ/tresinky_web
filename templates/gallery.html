@@ -137,7 +137,7 @@
                              data-bs-toggle="modal"
                              data-bs-target="#imageModal{{ image.id }}"
                              class="gallery-image"
-                             data-fallback="{{ url_for('static', filename='img/placeholder.jpg') }}">
+                             loading="lazy">
                         <div class="caption">
                             {% if image.title %}
                             <h3>{{ image.title }}</h3>
@@ -162,7 +162,7 @@
                                 <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
                                      alt="{{ image.title or 'Fotografie' }}"
                                      class="gallery-image"
-                                     data-fallback="{{ url_for('static', filename='img/placeholder.jpg') }}">
+                                     loading="lazy">
                                 {% if image.description %}
                                 <div class="modal-description">{{ image.description }}</div>
                                 {% endif %}
@@ -200,14 +200,6 @@
                 }
             });
         }
-    });
-
-    // Handle image loading errors
-    document.querySelectorAll('.gallery-image').forEach(img => {
-        img.onerror = function() {
-            this.onerror = null;
-            this.src = this.dataset.fallback;
-        };
     });
 </script>
 {% endblock %} 
