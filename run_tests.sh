@@ -5,8 +5,7 @@ if [ -d ".venv" ]; then
     source .venv/bin/activate
 fi
 
-# Install requirements
-pip install -r requirements.txt
+# Install test dependencies
 pip install -r requirements-test.txt
 
 # Run tests with coverage
