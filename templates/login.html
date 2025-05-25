@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Přihlášení{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Přihlášení</h1>
+                <p class="lead">Přihlaste se do svého účtu</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mx-auto">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="registration-method">
+                            <div class="registration-method-btn active" data-method="email">
+                                <i class="bi bi-envelope"></i>
+                                Email
+                            </div>
+                            <div class="registration-method-btn" data-method="phone">
+                                <i class="bi bi-telephone"></i>
+                                Telefon
+                            </div>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('login') }}">
+                            {{ form.csrf_token }}
+                            
+                            <div class="registration-field active" id="email-field">
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control", placeholder="Zadejte svůj email") }}
+                                </div>
+                            </div>
+                            
+                            <div class="registration-field" id="phone-field">
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control", placeholder="Zadejte své telefonní číslo") }}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {{ form.password.label(class="form-label") }}
+                                {{ form.password(class="form-control", placeholder="Zadejte své heslo") }}
+                            </div>
+                            
+                            <div class="mb-3 form-check">
+                                {{ form.remember(class="form-check-input") }}
+                                {{ form.remember.label(class="form-check-label") }}
+                            </div>
+                            
+                            {{ form.submit(class="btn btn-primary btn-lg w-100") }}
+                        </form>
+                        
+                        <div class="mt-4 text-center">
+                            <p>Nebo se přihlaste pomocí:</p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="{{ url_for('login_identita') }}" class="btn btn-outline-secondary btn-identita">
+                                    <img src="{{ url_for('static', filename='img/io.png') }}" alt="Identita občana" class="identita-logo" style="height: 1.5em; vertical-align: middle; margin-right: 0.3em;">
+                                    <span class="identita-text">Identita občana</span>
+                                </a>
+                                <a href="{{ url_for('login_google') }}" class="btn btn-outline-danger">
+                                    <i class="bi bi-google"></i> Google
+                                </a>
+                                <a href="{{ url_for('login_facebook') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-facebook"></i> Facebook
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 text-center">
+                            <p>Nemáte účet? <a href="{{ url_for('register') }}">Zaregistrujte se</a></p>
+                            <p><a href="{{ url_for('reset_password') }}">Zapomenuté heslo?</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const methodButtons = document.querySelectorAll('.registration-method-btn');
+    const emailField = document.getElementById('email-field');
+    const phoneField = document.getElementById('phone-field');
+    
+    methodButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            methodButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            // Show/hide fields based on selected method
+            const method = this.dataset.method;
+            if (method === 'email') {
+                emailField.classList.add('active');
+                phoneField.classList.remove('active');
+            } else {
+                emailField.classList.remove('active');
+                phoneField.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+<style>
+.btn-identita {
+    border-color: #ffc107 !important;
+}
+.btn-identita .identita-text {
+    color: #ffc107 !important;
+    transition: color 0.2s;
+}
+.btn-identita:hover .identita-text,
+.btn-identita:focus .identita-text {
+    color: #fff !important;
+}
+.btn-identita:hover,
+.btn-identita:focus {
+    background-color: #ffc107 !important;
+    color: #fff !important;
+    border-color: #ffc107 !important;
+}
+.btn-identita:hover .identita-logo,
+.btn-identita:focus .identita-logo {
+    filter: brightness(0) invert(1);
+}
+</style>
+{% endblock %} 

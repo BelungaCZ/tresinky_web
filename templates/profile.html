@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Profil{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Profil uživatele</h1>
+                <p class="lead">Správa vašeho účtu</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <div class="avatar-container mb-3">
+                            <img src="{{ url_for('static', filename=current_user.avatar) if current_user.avatar else url_for('static', filename='img/anonymous_logo.png') }}" alt="Profilový obrázek" class="profile-avatar">
+                        </div>
+                        <h5 class="card-title">{{ current_user.name or current_user.email or current_user.phone }}</h5>
+                        <p class="text-muted">Člen od {{ current_user.created_at.strftime('%d.%m.%Y') }}</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Rychlé odkazy</h5>
+                        <ul class="list-unstyled">
+                            <li><a href="{{ url_for('gallery') }}" class="text-decoration-none"><i class="bi bi-images"></i> Galerie</a></li>
+                            <li><a href="{{ url_for('donate') }}" class="text-decoration-none"><i class="bi bi-heart"></i> Podpora</a></li>
+                            <li><a href="{{ url_for('contact') }}" class="text-decoration-none"><i class="bi bi-envelope"></i> Kontakt</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Nastavení účtu</h5>
+                        <form method="POST" action="{{ url_for('profile') }}" enctype="multipart/form-data">
+                            {{ form.csrf_token }}
+                            
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control", value=current_user.name or '') }}
+                                {% if form.name.errors %}
+                                    {% for error in form.name.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control", value=current_user.email or '') }}
+                                {% if form.email.errors %}
+                                    {% for error in form.email.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.phone.label(class="form-label") }}
+                                {{ form.phone(class="form-control", value=current_user.phone or '') }}
+                                {% if form.phone.errors %}
+                                    {% for error in form.phone.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.avatar.label(class="form-label") }}
+                                {{ form.avatar(class="form-control") }}
+                                {% if current_user.avatar %}
+                                    <div class="mt-2">
+                                        <img src="{{ url_for('static', filename=current_user.avatar) }}" alt="Aktuální foto" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #dee2e6;">
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.current_password.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.current_password(class="form-control", id="currentPasswordInput") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleCurrentPassword">
+                                        <i class="bi bi-eye" id="currentPasswordIcon"></i>
+                                    </button>
+                                </div>
+                                {% if form.current_password.errors %}
+                                    {% for error in form.current_password.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.new_password.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.new_password(class="form-control", id="newPasswordInput") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                        <i class="bi bi-eye" id="newPasswordIcon"></i>
+                                    </button>
+                                </div>
+                                {% if form.new_password.errors %}
+                                    {% for error in form.new_password.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                {{ form.confirm_password.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.confirm_password(class="form-control", id="confirmPasswordInput") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleConfirmPassword">
+                                        <i class="bi bi-eye" id="confirmPasswordIcon"></i>
+                                    </button>
+                                </div>
+                                {% if form.confirm_password.errors %}
+                                    {% for error in form.confirm_password.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            {{ form.submit(class="btn btn-primary") }}
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Připojené účty</h5>
+                        <div class="d-flex gap-3">
+                            <a href="{{ url_for('login_google') }}" class="btn btn-outline-danger">
+                                <i class="bi bi-google"></i> Google
+                            </a>
+                            <a href="{{ url_for('login_facebook') }}" class="btn btn-outline-primary">
+                                <i class="bi bi-facebook"></i> Facebook
+                            </a>
+                            <a href="{{ url_for('login_identita') }}" class="btn btn-outline-secondary btn-identita">
+                                <img src="{{ url_for('static', filename='img/io.png') }}" alt="Identita občana" class="identita-logo" style="height: 1.5em; vertical-align: middle; margin-right: 0.3em;">
+                                <span class="identita-text">Identita občana</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #dee2e6;
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-container:hover::after {
+    content: 'Změnit foto';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    text-align: center;
+    padding: 5px;
+    border-bottom-left-radius: 75px;
+    border-bottom-right-radius: 75px;
+    cursor: pointer;
+}
+
+.btn-identita {
+    border-color: #ffc107 !important;
+}
+.btn-identita .identita-text {
+    color: #ffc107 !important;
+    transition: color 0.2s;
+}
+.btn-identita:hover .identita-text,
+.btn-identita:focus .identita-text {
+    color: #fff !important;
+}
+.btn-identita:hover,
+.btn-identita:focus {
+    background-color: #ffc107 !important;
+    color: #fff !important;
+    border-color: #ffc107 !important;
+}
+.btn-identita:hover .identita-logo,
+.btn-identita:focus .identita-logo {
+    filter: brightness(0) invert(1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showPassword(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    input.type = "text";
+    icon.classList.remove("bi-eye");
+    icon.classList.add("bi-eye-slash");
+}
+function hidePassword(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    input.type = "password";
+    icon.classList.remove("bi-eye-slash");
+    icon.classList.add("bi-eye");
+}
+
+document.getElementById('toggleCurrentPassword').addEventListener('mousedown', function() {
+    showPassword('currentPasswordInput', 'currentPasswordIcon');
+});
+document.getElementById('toggleCurrentPassword').addEventListener('mouseup', function() {
+    hidePassword('currentPasswordInput', 'currentPasswordIcon');
+});
+document.getElementById('toggleCurrentPassword').addEventListener('mouseleave', function() {
+    hidePassword('currentPasswordInput', 'currentPasswordIcon');
+});
+
+document.getElementById('toggleNewPassword').addEventListener('mousedown', function() {
+    showPassword('newPasswordInput', 'newPasswordIcon');
+});
+document.getElementById('toggleNewPassword').addEventListener('mouseup', function() {
+    hidePassword('newPasswordInput', 'newPasswordIcon');
+});
+document.getElementById('toggleNewPassword').addEventListener('mouseleave', function() {
+    hidePassword('newPasswordInput', 'newPasswordIcon');
+});
+
+document.getElementById('toggleConfirmPassword').addEventListener('mousedown', function() {
+    showPassword('confirmPasswordInput', 'confirmPasswordIcon');
+});
+document.getElementById('toggleConfirmPassword').addEventListener('mouseup', function() {
+    hidePassword('confirmPasswordInput', 'confirmPasswordIcon');
+});
+document.getElementById('toggleConfirmPassword').addEventListener('mouseleave', function() {
+    hidePassword('confirmPasswordInput', 'confirmPasswordIcon');
+});
+</script>
+{% endblock %} 
