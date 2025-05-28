@@ -1,19 +1,23 @@
+version: '3.8'
+
 services:
   web:
     build: .
+    expose:
+      - "5000"
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - DATABASE_URL=sqlite:///tresinky.db
-      - VIRTUAL_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
+      - VIRTUAL_HOST=statex.cz
+      - LETSENCRYPT_HOST=statex.cz
+      - LETSENCRYPT_EMAIL=admin@statex.cz
     volumes:
       - ./static/uploads:/app/static/uploads
       - ./instance:/app/instance
     restart: unless-stopped
     networks:
-      - app-network
+      - nginx-net
 
   nginx-proxy:
     image: nginxproxy/nginx-proxy:alpine
@@ -22,35 +26,28 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - /etc/nginx/vhost.d
+      - /usr/share/nginx/html
+      - ./certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
-    restart: unless-stopped
     networks:
-      - app-network
+      - nginx-net
+    restart: unless-stopped
 
-  nginx-letsencrypt:
+  letsencrypt:
     image: nginxproxy/acme-companion
     container_name: nginx-letsencrypt
     environment:
-      - NGINX_PROXY_CONTAINER=nginx-proxy
+      - DEFAULT_EMAIL=admin@statex.cz
     volumes:
+      - ./certs:/etc/nginx/certs
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
     depends_on:
       - nginx-proxy
-    restart: unless-stopped
     networks:
-      - app-network
-
-volumes:
-  nginx_certs:
-  nginx_vhost:
-  nginx_html:
+      - nginx-net
+    restart: unless-stopped
 
 networks:
-  app-network:
+  nginx-net:
     driver: bridge
