@@ -1,13 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, EmailField, SubmitField, FileField
+from wtforms import StringField, TextAreaField, EmailField, SubmitField, FileField, IntegerField
 from wtforms.validators import DataRequired, Email
 import os
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import exifread
 from PIL import Image
+from pathlib import Path
+import re
+import unicodedata
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config['SECRET_KEY'] = os.urandom(24)
@@ -32,6 +35,8 @@ class GalleryImage(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime, nullable=False)
     original_date = db.Column(db.DateTime)
+    category = db.Column(db.String(100))  # New field for categories like "květen 2019"
+    display_order = db.Column(db.Integer, default=0)  # For controlling image order within categories
 
     def __repr__(self):
         return f'<GalleryImage {self.filename}>'
@@ -54,11 +59,14 @@ class ImageUploadForm(FlaskForm):
     image = FileField('Fotografie', validators=[DataRequired()])
     title = StringField('Název')
     description = TextAreaField('Popis')
+    category = StringField('Kategorie (např. "květen 2019")')
     submit = SubmitField('Nahrát')
 
 class ImageEditForm(FlaskForm):
     title = StringField('Název', validators=[DataRequired()])
     description = TextAreaField('Popis')
+    category = StringField('Kategorie')
+    display_order = IntegerField('Pořadí')
     submit = SubmitField('Uložit změny')
 
 def get_image_date(image_path):
@@ -91,10 +99,78 @@ def about():
 def orchard():
     return render_template('orchard.html')
 
-@app.route('/galerie')
+@app.route('/gallery')
 def gallery():
-    images = GalleryImage.query.order_by(GalleryImage.date.desc()).all()
-    return render_template('gallery.html', images=images)
+    uploads_dir = Path('static/uploads')
+    debug_info = {
+        'exists': uploads_dir.exists(),
+        'is_dir': uploads_dir.is_dir(),
+        'children': [str(p) for p in uploads_dir.iterdir()] if uploads_dir.exists() else []
+    }
+    test_folder = uploads_dir / 'Třešinky'
+    test_files = []
+    if test_folder.exists() and test_folder.is_dir():
+        test_files = [str(f) for f in test_folder.iterdir()]
+    all_folders_files = {}
+    for folder in uploads_dir.iterdir() if uploads_dir.exists() else []:
+        if folder.is_dir() and not folder.name.startswith('.'):
+            all_folders_files[folder.name] = [str(f) for f in folder.iterdir()]
+    folders = []
+    for folder in uploads_dir.iterdir() if uploads_dir.exists() else []:
+        if folder.is_dir() and not folder.name.startswith('.'):
+            images = []
+            for file in folder.iterdir():
+                if file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                    images.append(str(file.relative_to('static')))
+            if images:
+                images.sort(key=lambda x: os.path.getsize(os.path.join('static', x)), reverse=True)
+                folders.append({
+                    'name': folder.name,
+                    'cover_image': images[0],
+                    'images': images
+                })
+
+    # --- Сортировка папок по правилам ---
+    def normalize(s):
+        return ''.join(
+            c for c in unicodedata.normalize('NFKD', s)
+            if not unicodedata.combining(c)
+        ).lower().strip()
+
+    folders_special = []
+    folders_rest = []
+
+    for f in folders:
+        norm_name = normalize(f['name'])
+        if norm_name.startswith('stare a nove mapy'):
+            folders_special.append((0, f))
+        elif norm_name.startswith('puvodni stav'):
+            folders_special.append((1, f))
+        else:
+            folders_rest.append(f)
+
+    def parse_folder(folder_name):
+        norm_name = normalize(folder_name)
+        m = re.search(
+            r'(leden|unor|brezen|duben|kveten|cerven|cervenec|srpen|zari|rijen|listopad|prosinec)\s+(\d{4})',
+            norm_name
+        )
+        if m:
+            month = [
+                'leden', 'unor', 'brezen', 'duben', 'kveten', 'cerven',
+                'cervenec', 'srpen', 'zari', 'rijen', 'listopad', 'prosinec'
+            ].index(m.group(1))
+            year = int(m.group(2))
+            return (year, month, folder_name)
+        return (9999, 99, folder_name)
+
+    folders_rest.sort(key=lambda f: parse_folder(f['name']))
+    folders_special.sort()
+    folders = [f for _, f in folders_special] + folders_rest
+    print('FOLDER ORDER:', [f['name'] for f in folders])
+    # --- конец сортировки ---
+
+    return render_template('gallery.html', folders=folders, debug_info=debug_info, test_files=test_files, all_folders_files=all_folders_files)
 
 @app.route('/kontakt', methods=['GET', 'POST'])
 def contact():
@@ -132,45 +208,31 @@ def upload_image():
                 _, ext = os.path.splitext(file.filename)
                 ext = ext.lower()
                 
-                # Generate a secure filename with timestamp to avoid duplicates
-                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                base_filename = secure_filename(os.path.splitext(file.filename)[0])
-                filename = f"{base_filename}_{timestamp}{ext}"
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                # Generate a secure filename
+                filename = secure_filename(file.filename)
                 
                 # Save the file
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
                 
-                # If the file is HEIC, convert it to JPEG
-                if ext == '.heic':
-                    try:
-                        with Image.open(file_path) as img:
-                            jpeg_path = os.path.splitext(file_path)[0] + '.jpg'
-                            img.convert('RGB').save(jpeg_path, 'JPEG')
-                        # Update filename to use JPEG version
-                        filename = os.path.splitext(filename)[0] + '.jpg'
-                        # Remove the original HEIC file
-                        os.remove(file_path)
-                    except Exception as e:
-                        print(f"Error converting HEIC to JPEG: {e}")
-                        continue
+                # Get image date from EXIF or file metadata
+                image_date = get_image_date(file_path)
                 
-                # Get image date
-                image_date = get_image_date(file_path if ext != '.heic' else jpeg_path)
-                
-                # Create database entry
-                image = GalleryImage(
+                # Create new gallery image
+                gallery_image = GalleryImage(
                     filename=filename,
                     title=form.title.data,
                     description=form.description.data,
                     date=image_date,
-                    original_date=image_date
+                    original_date=image_date,
+                    category=form.category.data
                 )
-                db.session.add(image)
+                
+                db.session.add(gallery_image)
         
         db.session.commit()
-        flash('Fotografie byly úspěšně nahrány!', 'success')
-        return redirect(url_for('gallery'))
+        flash('Fotografie byly úspěšně nahrány.', 'success')
+        return redirect(url_for('manage_gallery'))
     
     return render_template('upload.html', form=form)
 
@@ -187,6 +249,8 @@ def edit_image(id):
     if form.validate_on_submit():
         image.title = form.title.data
         image.description = form.description.data
+        image.category = form.category.data
+        image.display_order = form.display_order.data
         db.session.commit()
         flash('Fotografie byla úspěšně upravena!', 'success')
         return redirect(url_for('manage_gallery'))
