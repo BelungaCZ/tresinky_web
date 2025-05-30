@@ -1,6 +1,9 @@
 /* General Styles */
+body, h1, h2, h3, h4, h5, h6, .gallery-main-title, .gallery-subtitle, .lead, .card-title, .card-text, .btn, .navbar, .form-control, .modal, .section, .image-text-block, .history-card, .folder-name, a, p, ul, ol, li {
+    font-family: 'Inter', sans-serif !important;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #333;
     padding-top: 76px;
     font-size: 18px;
@@ -90,19 +93,19 @@ body {
 
 /* Specific backgrounds */
 .history-card.history {
-    background-image: url("/static/images/history.jpg");
+    background-image: url("/static/images/history.webp");
 }
 
 .history-card.present {
-    background-image: url("/static/images/present.jpg");
+    background-image: url("/static/images/present.webp");
 }
 
 .history-card.care {
-    background-image: url("/static/images/care.jpg");
+    background-image: url("/static/images/care.webp");
 }
 
 .history-card.community {
-    background-image: url("/static/images/community.jpg");
+    background-image: url("/static/images/community.webp");
 }
 
 /* Card Styles */
