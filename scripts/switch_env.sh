@@ -14,6 +14,16 @@ if [ "$ENV" != "development" ] && [ "$ENV" != "production" ]; then
     exit 1
 fi
 
+# Check if environment file exists
+if [ ! -f ".env.$ENV" ]; then
+    echo "Error: .env.$ENV file not found!"
+    echo "Please run ./scripts/setup_env.sh first to create environment files."
+    exit 1
+fi
+
+# Create symlink to the appropriate environment file
+ln -sf ".env.$ENV" .env
+
 # Export environment variable
 export FLASK_ENV=$ENV
 
@@ -24,4 +34,11 @@ docker-compose down
 docker-compose up -d
 
 echo "Switched to $ENV environment"
-echo "Environment variables loaded from .env.$ENV" 
+
+echo "Environment variables are now loaded from .env.$ENV"
+
+# If switching to production, remind about SSL
+if [ "$ENV" = "production" ]; then
+    echo ""
+    echo "Remember to run ./scripts/generate_ssl.sh if SSL certificates are not set up"
+fi 

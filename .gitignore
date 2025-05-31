@@ -26,6 +26,8 @@ MANIFEST
 
 # Virtual Environment
 .env
+.env.*
+!.env.example
 .venv
 env/
 venv/
