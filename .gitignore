@@ -75,7 +75,9 @@ log/
 # Media
 uploads/
 media/
-static/uploads/
+static/images/gallery/
+static/images/hero/
+static/images/thumbnails/
 
 # env.bak/
 # venv.bak/
@@ -86,3 +88,6 @@ static/uploads/
 # *.cover
 # *.py,cover
 # .pytest_cache/ 
+
+.DS_Store
+**/.DS_Store
