@@ -76,7 +76,7 @@ flask db upgrade
 flask run
 ```
 
-The application will be available at `http://localhost:5000`
+The application will be available at `http://localhost:5001`
 
 ## Project Structure
 
