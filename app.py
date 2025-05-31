@@ -11,7 +11,7 @@ from PIL import Image
 from pathlib import Path
 import re
 import unicodedata
-from sqlalchemy import desc, text
+from sqlalchemy import desc, Column, text
 from typing import Any
 import subprocess
 from wtforms.validators import ValidationError
