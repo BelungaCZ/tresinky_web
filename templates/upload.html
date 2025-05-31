@@ -6,37 +6,205 @@
 <div class="container mt-4">
     <h2>Nahrát fotografie</h2>
     <form method="POST" enctype="multipart/form-data" id="uploadForm">
-                {{ form.hidden_tag() }}
+        {{ form.hidden_tag() }}
         <div class="mb-3">
             <label for="image" class="form-label">Fotografie</label>
-            <input type="file" class="form-control" id="image" name="image" multiple webkitdirectory directory>
-            <div class="form-text">Můžete nahrát jednotlivé soubory nebo celou složku.</div>
+            <div class="input-group">
+                <input type="file" class="form-control" id="image" name="image" multiple webkitdirectory directory style="display: none;">
+                <button type="button" class="btn btn-primary" id="fileInputButton">Vybrat soubory</button>
+                <span class="form-control" id="fileInputLabel">Žádné soubory nebyly vybrány</span>
+            </div>
+            <div class="form-text" id="fileCount">Můžete nahrát jednotlivé soubory nebo celou složku.</div>
             <div id="fileList" class="mt-2"></div>
         </div>
         <div class="mb-3">
             <label for="album" class="form-label">Album</label>
             {{ form.album(class="form-select") }}
         </div>
-                <div class="mb-3">
-                    {{ form.image.label(class="form-label") }}
-                    {{ form.image(class="form-control", multiple="multiple") }}
-                    <div class="form-text">Můžete vybrat více souborů najednou nebo celou složku</div>
-                </div>
-                
-                <div class="mb-3">
-                    {{ form.title.label(class="form-label") }}
-                    {{ form.title(class="form-control") }}
-                    <div class="form-text">Název je volitelný. Pokud není zadán, bude použit název souboru.</div>
-                </div>
-                
-                <div class="mb-3">
-                    {{ form.description.label(class="form-label") }}
-                    {{ form.description(class="form-control", rows="3") }}
-                </div>
-                
-                {{ form.submit(class="btn btn-primary") }}
-            </form>
+        <div class="mb-3">
+            <label for="new_album" class="form-label">Nový album</label>
+            {{ form.new_album(class="form-control") }}
         </div>
-    </div>
+        <div class="mb-3">
+            <label for="title" class="form-label">Název</label>
+            {{ form.title(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Popis</label>
+            {{ form.description(class="form-control") }}
+        </div>
+        <div class="progress mb-3 d-none" id="uploadProgress">
+            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+    const progressBar = document.getElementById('uploadProgress');
+    const progressBarInner = progressBar.querySelector('.progress-bar');
+    const albumSelect = document.getElementById('album');
+    const newAlbumInput = document.getElementById('new_album');
+    const titleInput = document.getElementById('title');
+    const fileList = document.getElementById('fileList');
+
+    // Supported file types
+    const supportedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'image/heic',
+        'video/mp4'
+    ];
+
+    // Function to check if file is supported
+    function isFileSupported(file) {
+        // Check if it's a hidden file (starts with .)
+        if (file.name.startsWith('.')) {
+            return false;
+        }
+        
+        // Check if it's a supported type
+        if (supportedTypes.includes(file.type)) {
+            return true;
+        }
+        
+        // Check file extension for HEIC files (browsers might not recognize the type)
+        const ext = file.name.toLowerCase().split('.').pop();
+        if (ext === 'heic') {
+            return true;
+        }
+        
+        return false;
+    }
+
+    // Auto-fill album name and title based on selected directory
+    document.getElementById('fileInputButton').addEventListener('click', function() {
+        document.getElementById('image').click();
+    });
+
+    document.getElementById('image').addEventListener('change', function(e) {
+        const files = e.target.files;
+        
+        // Clear previous file list
+        fileList.innerHTML = '';
+        
+        // Count supported files
+        let supportedCount = 0;
+        let directoryName = '';
+        
+        if (files.length > 0) {
+            // Get the directory name from the first file
+            const path = files[0].webkitRelativePath;
+            directoryName = path.split('/')[0];
+        }
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (isFileSupported(file)) {
+                supportedCount++;
+            }
+        }
+        
+        // Update the file input label
+        const fileInputLabel = document.getElementById('fileInputLabel');
+        if (supportedCount > 0) {
+            fileInputLabel.textContent = `${directoryName} (${supportedCount} ${supportedCount === 1 ? 'soubor' : 'soubory'})`;
+        } else {
+            fileInputLabel.textContent = 'Žádné soubory nebyly vybrány';
+        }
+        
+        // Update the file count text
+        const fileCount = document.getElementById('fileCount');
+        if (supportedCount > 0) {
+            fileCount.textContent = `Vybráno ${supportedCount} ${supportedCount === 1 ? 'soubor' : 'soubory'} k nahrání`;
+        } else {
+            fileCount.textContent = 'Můžete nahrát jednotlivé soubory nebo celou složku.';
+        }
+        
+        if (supportedCount === 0) {
+            fileList.innerHTML = '<div class="alert alert-warning">No supported files found in the selected directory.</div>';
+        }
+        
+        if (files.length > 0) {
+            // If no album is selected, use directory name as new album
+            if (!albumSelect.value) {
+                newAlbumInput.value = directoryName;
+            }
+            
+            // If no title is entered, use directory name as title
+            if (!titleInput.value) {
+                titleInput.value = directoryName;
+            }
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const files = document.getElementById('image').files;
+        
+        // Clear any existing files in formData
+        formData.delete('image');
+        
+        // Add only supported files to formData
+        let fileCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (isFileSupported(file)) {
+                formData.append('image', file);
+                fileCount++;
+            }
+        }
+        
+        // If no valid files were found, show error
+        if (fileCount === 0) {
+            alert('Nebyly nalezeny žádné podporované soubory k nahrání.');
+            return;
+        }
+        
+        // Show progress bar
+        progressBar.classList.remove('d-none');
+        progressBarInner.style.width = '0%';
+        
+        // Create WebSocket connection for progress updates
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/upload`);
+        
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'progress') {
+                progressBarInner.style.width = `${data.progress}%`;
+                progressBarInner.textContent = `${data.progress}%`;
+            }
+        };
+        
+        ws.onclose = function() {
+            progressBar.classList.add('d-none');
+        };
+        
+        fetch('/admin/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/admin/gallery';
+            } else {
+                alert('Chyba při nahrávání: ' + data.error);
+                progressBar.classList.add('d-none');
+            }
+        })
+        .catch(error => {
+            alert('Chyba při nahrávání: ' + error);
+            progressBar.classList.add('d-none');
+        });
+    });
+});
+</script>
 {% endblock %} 
