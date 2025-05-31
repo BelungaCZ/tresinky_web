@@ -2,7 +2,7 @@
 
 # Check if environment argument is provided
 if [ -z "$1" ]; then
-    echo "Usage: $0 [development|production]"
+    echo "Usage: ./switch_env.sh [development|production]"
     exit 1
 fi
 
@@ -23,6 +23,15 @@ fi
 
 # Create symlink to the appropriate environment file
 ln -sf ".env.$ENV" .env
+
+# Export environment variable
+export FLASK_ENV=$ENV
+
+# Stop existing containers
+docker-compose down
+
+# Start containers with new environment
+docker-compose up -d
 
 echo "Switched to $ENV environment"
 echo "Environment variables are now loaded from .env.$ENV"
