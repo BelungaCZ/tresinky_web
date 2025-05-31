@@ -34,6 +34,7 @@ docker-compose down
 docker-compose up -d
 
 echo "Switched to $ENV environment"
+
 echo "Environment variables are now loaded from .env.$ENV"
 
 # If switching to production, remind about SSL

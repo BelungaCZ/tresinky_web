@@ -16,3 +16,5 @@ chmod 644 ssl/cert.pem
 echo "SSL certificates have been generated in the ssl/ directory"
 echo "These are self-signed certificates for development use only."
 echo "For production, SSL certificates will be managed by Let's Encrypt." 
+
+echo "SSL certificates generated successfully!" 
