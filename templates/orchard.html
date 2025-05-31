@@ -91,60 +91,53 @@
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-lg-10 mx-auto" data-aos="fade-up">
-                <div class="history-card history">
-                    <div class="overlay"></div>
-                    <div class="content">
-                        <h2>Historie sadu</h2>
-                        <p>Sad Třešinky Cetechovice byl vysázen v roce 1927. V obecní kronice se praví toto:</p>
-                        <blockquote class="blockquote">
-                            "Singularisté na pozemku na Podhoří vysadili 510 kusů třešňových štěpů po Kč 2,50 a Kč 3,00 za jeden kus. Bylo vysazeno 6 druhů a sice: kyjovská, chrupka červená, krátkostopá, germersdotfská chrupka, napoleonská, heldlfrugerova chrupka."
-                        </blockquote>
+        <!-- Новые карточки с <img>, overlay и текстом поверх -->
+        <div class="row g-4 flex-column">
+            <div class="col-12 mb-4" data-aos="fade-up">
+                <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
+                    <img src="{{ url_for('static', filename='images/history.webp') }}" class="w-100 object-fit-cover" alt="Historie sadu" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
+                    <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
+                        <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Historie sadu</h4>
+                        <p class="mb-0" style="font-size: 1.1rem;">Sad Třešinky Cetechovice byl vysázen v roce 1927. V obecní kronice se praví toto:</p>
+                        <div class="mt-2 mb-2 p-3" style="background: rgba(255,255,255,0.1); border-left: 4px solid rgba(255,255,255,0.5); border-radius: 4px;">
+                            <p class="mb-0" style="font-size: 1.1rem; font-style: italic;">Singularisté na pozemku na Podhoří vysadili 510 kusů třešňových štěpů po Kč 2,50 a Kč 3,00 za jeden kus. Bylo vysazeno 6 druhů a sice: kyjovská, chrupka červená, krátkostopá, germersdotfská chrupka, napoleonská a heldlfrugerova chrupka.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
+                    <img src="{{ url_for('static', filename='images/present.webp') }}" class="w-100 object-fit-cover" alt="Současnost" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
+                    <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
+                        <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Současnost</h4>
+                        <p class="mb-0" style="font-size: 1.1rem;">Do současnosti přežila jen asi třetina stromů. Pravou polovinu sadu singularisté vyčistili od náletu na podzim roku 2018. Rok 2019 byl věnován údržbě vyčištěných ploch kosením a vypásáním ovečkami. Na podzim pak bylo vysazeno prvních 35 ovocných stromů starých krajových odrůd. V roce 2020 pokračovala péče kosením, vypásáním a dosadbou dalších 120 vybraných odrůd ovocných stromů. Výsadby jsou prováděny podle návrhu zahradní architektky Ing. Zuzany Špakové, která se návratem starých ovocných odrůd do krajiny zabývá.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
+                    <img src="{{ url_for('static', filename='images/care.webp') }}" class="w-100 object-fit-cover" alt="Péče o sad" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
+                    <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
+                        <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Péče o sad</h4>
+                        <p class="mb-0" style="font-size: 1.1rem;">Spolek k rekonstrukci přistupuje velmi citlivě. Využívá tradiční postupy bez jakéhokoliv použití chemických přípravků za laskavé podpory AOPK. Na území se vyskytuje celá řada dnes již vzácných živočichů a dá se předpokládat, že se vrátí i zajímavé a dnes již mizející rostlinné druhy. Pro úspěšné rozvíjení a množení byla na místě ponechána dřevní hmota již dožívajících třešní nejen v broukovištích, ale i na stromech a jejich torzech. Pro úkryty a zlepšení podmínek života zejména drobných obratlovců jsou na několika místech ponechány hromady větví získané při čištění sadu od náletu.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
+                    <img src="{{ url_for('static', filename='images/community.webp') }}" class="w-100 object-fit-cover" alt="Přínos pro komunitu" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
+                    <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
+                        <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Přínos pro komunitu</h4>
+                        <p class="mb-0" style="font-size: 1.1rem;">Péče o sad přinesla do Cetechovic další příjemný prvek do života místních obyvatel. Jsme rádi, že sad není přeměněn na velkovýrobní ziskovou pěstírnu, ale je příjemným místem k procházkám, setkávání a společné aktivitě lidí.</p>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            <div class="col-lg-10 mx-auto" data-aos="fade-up">
-                <div class="history-card present">
-                    <div class="overlay"></div>
-                    <div class="content">
-                        <h2>Současnost</h2>
-                        <p>Do současnosti přežila jen asi třetina stromů. Pravou polovinu sadu singularisté vyčistili od náletu na podzim roku 2018. Rok 2019 byl věnován údržbě vyčištěných ploch kosením a vypásáním ovečkami.</p>
-                        <p>Na podzim pak bylo vysazeno prvních 35 ovocných stromů starých krajových odrůd. V roce 2020 pokračovala péče kosením, vypásáním a dosadbou dalších 120 vybraných odrůd ovocných stromů.</p>
-                        <p>Výsadby jsou prováděny podle návrhu zahradní architektky Ing. Zuzany Špakové, která se návratem starých ovocných odrůd do krajiny zabývá.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-10 mx-auto" data-aos="fade-up">
-                <div class="history-card care">
-                    <div class="overlay"></div>
-                    <div class="content">
-                        <h2>Péče o sad</h2>
-                        <p>Spolek k rekonstrukci přistupuje velmi citlivě. Využívá tradiční postupy bez jakéhokoliv použití chemických přípravků za laskavé podpory AOPK.</p>
-                        <p>Na území se vyskytuje celá řada dnes již vzácných živočichů a dá se předpokládat, že se vrátí i zajímavé a dnes již mizející rostlinné druhy.</p>
-                        <p>Pro úspěšné rozvíjení a množení byla na místě ponechána dřevní hmota již dožívajících třešní nejen v broukovištích, ale i na stromech a jejich torzech. Pro úkryty a zlepšení podmínek života zejména drobných obratlovců jsou na několika místech ponechány hromady větví získané při čištění sadu od náletu.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-10 mx-auto" data-aos="fade-up">
-                <div class="history-card community">
-                    <div class="overlay"></div>
-                    <div class="content">
-                        <h2>Přínos pro komunitu</h2>
-                        <p>Těší nás, že péče o sad přinesla do Cetechovic další příjemný prvek do života místních obyvatel. Jsme rádi, že sad není přeměněn na velkovýrobní ziskovou pěstírnu, ale je příjemným místem k procházkám, setkávání a společné aktivitě lidí.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Конец новых карточек -->
     </div>
 </section>
 {% endblock %}

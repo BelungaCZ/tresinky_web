@@ -10,13 +10,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='img/logo.png') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/history.webp') }}">
+    <link rel="preload" as="image" href="{{ url_for('static', filename='images/present.webp') }}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('home') }}">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Třešinky Cetechovice" height="40">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Třešinky Cetechovice" height="40" loading="eager">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>

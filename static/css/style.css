@@ -261,3 +261,73 @@ footer {
 .scroll-to-top i {
     font-size: 1.5rem;
 }
+
+/* Новый стиль для карточек photo-card на странице Sad */
+.photo-card {
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13), 0 1.5px 6px rgba(0,0,0,0.07);
+    position: relative;
+    background: #222;
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+.photo-card:hover {
+    transform: scale(1.035) translateY(-4px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+}
+.photo-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: filter 0.22s;
+}
+.photo-card-overlay {
+    background: linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.38) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+.photo-card-content {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    padding: 1.2rem 1.2rem 1.1rem 1.2rem;
+    background: linear-gradient(180deg, rgba(0,0,0,0.01) 0%, rgba(0,0,0,0.55) 100%);
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+}
+.photo-card-content h4 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.photo-card-content p {
+    font-size: 1rem;
+    color: #f3f3f3;
+    margin-bottom: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.13);
+}
+@media (max-width: 768px) {
+    .photo-card {
+        min-height: 180px;
+        border-radius: 10px;
+    }
+    .photo-card-content {
+        padding: 0.7rem 0.7rem 0.6rem 0.7rem;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+    .photo-card-content h4 {
+        font-size: 1rem;
+    }
+    .photo-card-content p {
+        font-size: 0.92rem;
+    }
+}
