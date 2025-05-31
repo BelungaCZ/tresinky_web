@@ -1,5 +1,8 @@
-# Python
+# Ignore Python cache
 __pycache__/
+*.pyc
+
+# Python
 *.py[cod]
 *$py.class
 *.so

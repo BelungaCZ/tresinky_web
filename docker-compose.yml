@@ -1,14 +1,13 @@
-version: '3.8'
-
 services:
   web:
     build: .
-    ports:
-      - "5000:5000"
     environment:
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - DATABASE_URL=sqlite:///tresinky.db
+      - VIRTUAL_HOST=sad-tresinky-cetechovice.cz
+      - LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
+      - LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
     volumes:
       - ./static/uploads:/app/static/uploads
       - ./instance:/app/instance
@@ -16,6 +15,42 @@ services:
     networks:
       - app-network
 
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  nginx-letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-letsencrypt
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+    depends_on:
+      - nginx-proxy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  nginx_certs:
+  nginx_vhost:
+  nginx_html:
+
 networks:
   app-network:
-    driver: bridge 
+    driver: bridge
