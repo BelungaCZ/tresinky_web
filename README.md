@@ -10,11 +10,15 @@ Modern website for the Třešinky Cetechovice association, featuring information
 - Contact form
 - Donation form
 - Interactive elements
+- User authentication
+- Personal cabinet
+- Admin panel
 
 ## Requirements
 
 - Python 3.8 or higher
 - pip (Python package manager)
+- Docker (optional)
 
 ## Installation
 
@@ -26,8 +30,8 @@ cd tresinky-web
 
 2. Create a virtual environment (recommended):
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 3. Install dependencies:
@@ -46,9 +50,19 @@ FLASK_ENV=development
 2. Create necessary directories:
 ```bash
 mkdir -p static/uploads
+mkdir -p static/images
 ```
 
 ## Running the Application
+
+### Using Docker
+
+1. Build and run using Docker Compose:
+```bash
+docker-compose up --build
+```
+
+### Local Development
 
 1. Initialize the database:
 ```bash
@@ -73,30 +87,38 @@ tresinky_web/
 ├── static/            # Static files
 │   ├── css/          # CSS files
 │   ├── js/           # JavaScript files
-│   ├── img/          # Images
-│   └── uploads/      # Uploaded files
+│   ├── images/       # Website images (webp format)
+│   └── uploads/      # User uploaded files
 ├── templates/         # HTML templates
-│   ├── base.html     # Base template
-│   ├── home.html     # Home page
-│   ├── about.html    # About page
-│   ├── orchard.html  # Orchard page
-│   ├── gallery.html  # Gallery page
-│   ├── donate.html   # Donation page
-│   └── contact.html  # Contact page
+├── auth_service/      # Authentication service
+├── personal_cabinet/  # User cabinet functionality
+├── tests/            # Test files
 └── README.md         # This file
 ```
 
-## Adding Content
+## Image Guidelines
 
-### Images
+### Website Images
+- Place all website images in `static/images/`
+- Use .webp format for better performance
+- Recommended image dimensions:
+  - Gallery thumbnails: 400x300px
+  - Full gallery images: 1200x800px
+  - Hero images: 1920x1080px
+- Optimize images before uploading
 
-1. Place images in the `static/img/` directory
-2. Update image paths in templates accordingly
+### Gallery Images
+- Upload gallery images through the admin interface
+- Images will be automatically processed and stored in `static/uploads/`
+- Supported formats: JPG, PNG, WEBP
+- Maximum file size: 5MB
 
-### Gallery
+## Testing
 
-1. Place gallery images in `static/uploads/`
-2. Use the admin interface to add image information
+Run tests using:
+```bash
+./run_tests.sh
+```
 
 ## Contributing
 

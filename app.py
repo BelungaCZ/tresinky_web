@@ -169,7 +169,7 @@ def gallery():
     folders = [f for _, f in folders_special] + folders_rest
     print('FOLDER ORDER:', [f['name'] for f in folders])
     # --- конец сортировки ---
-
+    
     return render_template('gallery.html', folders=folders, debug_info=debug_info, test_files=test_files, all_folders_files=all_folders_files)
 
 @app.route('/kontakt', methods=['GET', 'POST'])
