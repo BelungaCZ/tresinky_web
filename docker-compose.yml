@@ -1,48 +1,39 @@
+version: '3.8'
+
 services:
   web:
     build: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env.${FLASK_ENV:-development}
     environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
-      - DATABASE_URL=sqlite:///tresinky.db
-      - VIRTUAL_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
-    volumes:
-      - ./static/uploads:/app/static/uploads
-      - ./instance:/app/instance
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  nginx-proxy:
-    image: nginxproxy/nginx-proxy:alpine
-    container_name: nginx-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  nginx-letsencrypt:
-    image: nginxproxy/acme-companion
-    container_name: nginx-letsencrypt
-    environment:
-      - NGINX_PROXY_CONTAINER=nginx-proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
+      - FLASK_APP=app.py
     depends_on:
-      - nginx-proxy
-    restart: unless-stopped
+      - db
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/app/static:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    env_file:
+      - .env.${FLASK_ENV:-development}
+    depends_on:
+      - web
+    networks:
+      - app-network
+
+  db:
+    image: sqlite:latest
+    volumes:
+      - ./instance:/var/lib/sqlite
     networks:
       - app-network
 
