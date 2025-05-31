@@ -13,6 +13,7 @@
     
     .card {
         position: relative;
+        height: 100%;
     }
     
     .card.selected {
@@ -27,26 +28,96 @@
     .bulk-actions.show {
         display: block;
     }
+
+    .image-container {
+        position: relative;
+        width: 100%;
+        padding-top: 75%; /* 4:3 Aspect Ratio */
+        overflow: hidden;
+    }
+    
+    .card-img-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    video.card-img-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .btn-group {
+        gap: 5px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<section class="section">
-    <div class="container">
-        <div class="row mb-5">
-            <div class="col-12 text-center" data-aos="fade-up">
-                <h1 class="display-4">Správa galerie</h1>
-                <p class="lead">Spravujte fotografie v galerii</p>
+<div class="container mt-4">
+    <h2>Správa galerie</h2>
+    <p class="mb-4">Spravujte fotografie v galerii</p>
+
+    <div class="row">
+        {% for image in images %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="image-container">
+                    {% if image.filename.endswith('.mp4') %}
+                        <video class="card-img-top" controls>
+                            <source src="{{ url_for('static', filename=image.filename) }}" type="video/mp4">
+                            Váš prohlížeč nepodporuje video tag.
+                        </video>
+                    {% else %}
+                        <img src="{{ url_for('static', filename=image.filename) }}" class="card-img-top" alt="{{ image.title }}" onerror="handleImageError(this)">
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ image.title }}</h5>
+                    <p class="card-text">{{ image.description }}</p>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Kategorie: {{ image.category }}<br>
+                            Datum: {{ image.date.strftime('%d.%m.%Y') }}
+                        </small>
+                    </p>
+                    <div class="btn-group">
+                        <a href="{{ url_for('edit_image', id=image.id) }}" class="btn btn-primary btn-sm">Upravit</a>
+                        <form action="{{ url_for('delete_image', id=image.id) }}" method="POST" class="d-inline">
+                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Opravdu chcete smazat tuto fotografii?')">Smazat</button>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
+        {% endfor %}
+    </div>
 
+    <div class="mt-4">
+        <a href="{{ url_for('upload_image') }}" class="btn btn-success">Nahrát nové fotografie</a>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
         <div class="row mb-4">
             <div class="col-12 d-flex justify-content-between align-items-center">
-                <div>
-                    <a href="{{ url_for('upload_image') }}" class="btn btn-primary">
-                        <i class="bi bi-plus-circle"></i> Přidat fotografii
-                    </a>
-                </div>
                 <div class="bulk-actions">
                     <button id="bulkDeleteBtn" class="btn btn-danger">
                         <i class="bi bi-trash"></i> Smazat vybrané
@@ -54,45 +125,17 @@
                 </div>
             </div>
         </div>
-
-        <div class="row">
-            {% if images %}
-                {% for image in images %}
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <input type="checkbox" class="image-checkbox" data-id="{{ image.id }}">
-                        <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" class="card-img-top" alt="{{ image.title }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ image.title }}</h5>
-                            {% if image.description %}
-                            <p class="card-text">{{ image.description }}</p>
-                            {% endif %}
-                            <div class="d-flex justify-content-between">
-                                <a href="{{ url_for('edit_image', id=image.id) }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Upravit
-                                </a>
-                                <form action="{{ url_for('delete_image', id=image.id) }}" method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Opravdu chcete smazat tuto fotografii?')">
-                                        <i class="bi bi-trash"></i> Smazat
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="col-12 text-center">
-                    <p>Zatím nejsou k dispozici žádné fotografie.</p>
-                </div>
-            {% endif %}
-        </div>
     </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+function handleImageError(img) {
+    img.onerror = null;
+    img.src = "{{ url_for('static', filename='images/placeholder.jpg') }}";
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.image-checkbox');
     const bulkActions = document.querySelector('.bulk-actions');

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - {{ album }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gallery-container {
+        margin-top: 2rem;
+    }
+    
+    .gallery-item {
+        margin-bottom: 2rem;
+        cursor: pointer;
+    }
+    
+    .image-container {
+        position: relative;
+        width: 100%;
+        padding-top: 75%; /* 4:3 Aspect Ratio */
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .image-container img,
+    .image-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .image-container:hover {
+        transform: scale(1.02);
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 1000;
+    }
+    
+    .lightbox-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .lightbox-media {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    }
+    
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+        font-size: 30px;
+        cursor: pointer;
+    }
+    
+    .lightbox-nav {
+        position: absolute;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+    }
+    
+    .lightbox-nav button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    
+    .back-button {
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container gallery-container">
+    <a href="{{ url_for('gallery') }}" class="btn btn-outline-primary back-button">
+        <i class="fas fa-arrow-left"></i> Zpět na galerii
+    </a>
+    
+    <h1>{{ album }}</h1>
+    
+    <div class="row">
+        {% for image in images %}
+        <div class="col-md-4 gallery-item" onclick="openLightbox('{{ url_for('static', filename=image.filename) }}', {{ images|map(attribute='filename')|list|tojson }})">
+            <div class="image-container">
+                {% if image.filename.endswith('.mp4') %}
+                <video src="{{ url_for('static', filename=image.filename) }}" muted loop></video>
+                {% else %}
+                <img src="{{ url_for('static', filename=image.filename) }}" alt="{{ image.title }}">
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="lightbox" class="lightbox">
+    <div class="lightbox-content">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-media" src="" alt="">
+        <div class="lightbox-nav">
+            <button class="lightbox-prev">&lt;</button>
+            <button class="lightbox-next">&gt;</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxMedia = lightbox.querySelector('.lightbox-media');
+    const closeBtn = lightbox.querySelector('.lightbox-close');
+    const prevBtn = lightbox.querySelector('.lightbox-prev');
+    const nextBtn = lightbox.querySelector('.lightbox-next');
+    
+    let currentImageIndex = 0;
+    let currentImages = [];
+    
+    window.openLightbox = function(imageSrc, images) {
+        currentImages = images;
+        currentImageIndex = images.indexOf(imageSrc);
+        lightboxMedia.src = imageSrc;
+        lightbox.style.display = 'block';
+        updateNavigation();
+    }
+    
+    function closeLightbox() {
+        lightbox.style.display = 'none';
+    }
+    
+    function showPrevImage() {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+            lightboxMedia.src = currentImages[currentImageIndex];
+            updateNavigation();
+        }
+    }
+    
+    function showNextImage() {
+        if (currentImageIndex < currentImages.length - 1) {
+            currentImageIndex++;
+            lightboxMedia.src = currentImages[currentImageIndex];
+            updateNavigation();
+        }
+    }
+    
+    function updateNavigation() {
+        prevBtn.style.display = currentImageIndex > 0 ? 'block' : 'none';
+        nextBtn.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+    }
+    
+    // Event listeners
+    closeBtn.addEventListener('click', closeLightbox);
+    prevBtn.addEventListener('click', showPrevImage);
+    nextBtn.addEventListener('click', showNextImage);
+    
+    // Close lightbox when clicking outside the image
+    lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) {
+            closeLightbox();
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (lightbox.style.display === 'block') {
+            if (e.key === 'Escape') {
+                closeLightbox();
+            } else if (e.key === 'ArrowLeft') {
+                showPrevImage();
+            } else if (e.key === 'ArrowRight') {
+                showNextImage();
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
