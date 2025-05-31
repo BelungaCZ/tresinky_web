@@ -402,6 +402,99 @@
             font-size: 1rem;
         }
     }
+
+    .gallery-container {
+        margin-top: 2rem;
+    }
+    
+    .album-card {
+        margin-bottom: 2rem;
+        transition: transform 0.2s;
+    }
+    
+    .album-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .album-cover {
+        position: relative;
+        width: 100%;
+        padding-top: 75%; /* 4:3 Aspect Ratio */
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .album-cover img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .album-title {
+        margin-top: 1rem;
+        font-size: 1.2rem;
+        font-weight: 500;
+    }
+    
+    .album-date {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.9);
+        z-index: 1000;
+    }
+    
+    .lightbox-content {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .lightbox-image {
+        max-width: 90%;
+        max-height: 90%;
+        object-fit: contain;
+    }
+    
+    .lightbox-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+        font-size: 30px;
+        cursor: pointer;
+    }
+    
+    .lightbox-nav {
+        position: absolute;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 20px;
+    }
+    
+    .lightbox-nav button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+    }
 </style>
 {% endblock %}
 
@@ -429,12 +522,8 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title w-100 modal-title-bg" id="folderModalLabel{{ loop.index }}">{{ folder.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <button type="button" class="btn-close fixed-close" data-bs-dismiss="modal" aria-label="Close">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 22 22">
-                        <path stroke="#222" stroke-width="2" stroke-linecap="round" d="M6 6l10 10M16 6L6 16"/>
-                      </svg>
-                    </button>
                     <div class="modal-body" id="modalBody{{ loop.index }}">
                         <div class="row">
                             {% for image in folder.images %}
@@ -464,6 +553,17 @@
                 </div>
             </div>
             {% endfor %}
+    </div>
+</div>
+
+<div id="lightbox" class="lightbox">
+    <div class="lightbox-content">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-image" src="" alt="">
+        <div class="lightbox-nav">
+            <button class="lightbox-prev">&lt;</button>
+            <button class="lightbox-next">&gt;</button>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -540,11 +640,13 @@
         const rightBtn = overlay.querySelector('.lightbox-arrow.right');
         let currentIdx = 0;
         let images = [];
+        
         // Собираем src всех фото
         thumbs.forEach(thumb => {
             const img = thumb.querySelector('img');
             images.push(img.getAttribute('src'));
         });
+        
         // Открытие lightbox
         thumbs.forEach((thumb, idx) => {
             thumb.addEventListener('click', function(e) {
@@ -553,19 +655,24 @@
                 overlayImg.src = images[idx];
                 currentIdx = idx;
                 updateArrows();
+                // Set focus to overlay for keyboard navigation
+                overlay.focus();
             });
         });
+        
         // Закрытие lightbox
         closeBtn.addEventListener('click', function() {
             overlay.classList.remove('active');
             overlayImg.src = '';
         });
+        
         overlay.addEventListener('click', function(e) {
             if (e.target === overlay) {
                 overlay.classList.remove('active');
                 overlayImg.src = '';
             }
         });
+        
         // Перелистывание
         leftBtn.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -575,6 +682,7 @@
                 updateArrows();
             }
         });
+        
         rightBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             if (currentIdx < images.length - 1) {
@@ -583,20 +691,30 @@
                 updateArrows();
             }
         });
+        
         function updateArrows() {
             leftBtn.style.display = (currentIdx > 0) ? 'flex' : 'none';
             rightBtn.style.display = (currentIdx < images.length - 1) ? 'flex' : 'none';
         }
+        
         // Клавиатурное управление
-        overlay.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function(e) {
             if (!overlay.classList.contains('active')) return;
-            if (e.key === 'ArrowLeft') leftBtn.click();
-            if (e.key === 'ArrowRight') rightBtn.click();
-            if (e.key === 'Escape') closeBtn.click();
-        });
-        // Фокус для клавиатуры
-        overlay.addEventListener('transitionend', function() {
-            if (overlay.classList.contains('active')) overlay.focus();
+            
+            if (e.key === 'ArrowLeft' && currentIdx > 0) {
+                currentIdx--;
+                overlayImg.src = images[currentIdx];
+                updateArrows();
+            }
+            else if (e.key === 'ArrowRight' && currentIdx < images.length - 1) {
+                currentIdx++;
+                overlayImg.src = images[currentIdx];
+                updateArrows();
+            }
+            else if (e.key === 'Escape') {
+                overlay.classList.remove('active');
+                overlayImg.src = '';
+            }
         });
     });
 
@@ -617,6 +735,75 @@
                 modalBody.scrollTo({ top: 0, behavior: 'smooth' });
             });
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = lightbox.querySelector('.lightbox-image');
+        const closeBtn = lightbox.querySelector('.lightbox-close');
+        const prevBtn = lightbox.querySelector('.lightbox-prev');
+        const nextBtn = lightbox.querySelector('.lightbox-next');
+        
+        let currentImageIndex = 0;
+        let currentImages = [];
+        
+        function openLightbox(imageSrc, images) {
+            currentImages = images;
+            currentImageIndex = images.indexOf(imageSrc);
+            lightboxImg.src = imageSrc;
+            lightbox.style.display = 'block';
+            updateNavigation();
+        }
+        
+        function closeLightbox() {
+            lightbox.style.display = 'none';
+        }
+        
+        function showPrevImage() {
+            if (currentImageIndex > 0) {
+                currentImageIndex--;
+                lightboxImg.src = currentImages[currentImageIndex];
+                updateNavigation();
+            }
+        }
+        
+        function showNextImage() {
+            if (currentImageIndex < currentImages.length - 1) {
+                currentImageIndex++;
+                lightboxImg.src = currentImages[currentImageIndex];
+                updateNavigation();
+            }
+        }
+        
+        function updateNavigation() {
+            prevBtn.style.display = currentImageIndex > 0 ? 'block' : 'none';
+            nextBtn.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+        }
+        
+        // Event listeners
+        closeBtn.addEventListener('click', closeLightbox);
+        prevBtn.addEventListener('click', showPrevImage);
+        nextBtn.addEventListener('click', showNextImage);
+        
+        // Close lightbox when clicking outside the image
+        lightbox.addEventListener('click', function(e) {
+            if (e.target === lightbox) {
+                closeLightbox();
+            }
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (lightbox.style.display === 'block') {
+                if (e.key === 'Escape') {
+                    closeLightbox();
+                } else if (e.key === 'ArrowLeft') {
+                    showPrevImage();
+                } else if (e.key === 'ArrowRight') {
+                    showNextImage();
+                }
+            }
+        });
     });
 </script>
 {% endblock %} 

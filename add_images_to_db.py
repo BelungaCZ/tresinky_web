@@ -22,10 +22,15 @@ def add_images_to_db():
                 existing = GalleryImage.query.filter_by(filename=filename).first()
                 if not existing:
                     # Create new database entry
+                    image_date = get_image_date(os.path.join(upload_folder, filename))
                     image = GalleryImage(
                         filename=filename,
-                        date=get_image_date(os.path.join(upload_folder, filename)),
-                        original_date=get_image_date(os.path.join(upload_folder, filename))
+                        title=os.path.splitext(filename)[0],
+                        description=None,
+                        date=image_date,
+                        original_date=image_date,
+                        category=None,
+                        display_order=0
                     )
                     db.session.add(image)
         
