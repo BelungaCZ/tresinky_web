@@ -14,8 +14,6 @@ services:
       - ./instance:/app/instance
     env_file:
       - .env.${FLASK_ENV:-development}
-    depends_on:
-      - db
     restart: unless-stopped
     networks:
       - app-network
@@ -52,13 +50,6 @@ services:
     depends_on:
       - nginx-proxy
     restart: unless-stopped
-    networks:
-      - app-network
-
-  db:
-    image: sqlite:latest
-    volumes:
-      - ./instance:/var/lib/sqlite
     networks:
       - app-network
 
