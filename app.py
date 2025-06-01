@@ -504,7 +504,7 @@ if __name__ == '__main__':
         print("Development mode: Use 'flask run --host=0.0.0.0 --port=5000' to start the server")
         app.run(host="0.0.0.0", port=5000, debug=debug_mode)
     else:
-        # In production, this should be run with gunicorn
-        # gunicorn app:app --bind 0.0.0.0:5000
-        print("Production mode: Use 'gunicorn app:app --bind 0.0.0.0:5000' to start the server")
+        # In production, this should be run with gunicorn using config file
+        # gunicorn app:app -c gunicorn.conf.py
+        print("Production mode: Use 'gunicorn app:app -c gunicorn.conf.py' to start the server")
         app.run(host="0.0.0.0", port=5000, debug=debug_mode)
