@@ -27,4 +27,4 @@ ENV FLASK_ENV=production
 EXPOSE 5000
 
 # Command to run the application
-CMD ["python", "app.py"] 
+CMD ["sh", "-c", "if [ \"$FLASK_ENV\" = \"production\" ]; then gunicorn app:app --bind 0.0.0.0:5000 --workers 4; else python app.py; fi"] 

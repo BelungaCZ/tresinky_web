@@ -5,4 +5,5 @@ Pillow==10.2.0
 python-dotenv==1.0.1
 Werkzeug==3.0.1 
 exifread==3.0.0
-flask-sock==0.7.0 
+flask-sock==0.7.0
+gunicorn==21.2.0 

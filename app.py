@@ -494,5 +494,17 @@ def delete_image(id):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    
     debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
-    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
+    print(f"Debug mode: {debug_mode}")
+
+    if os.getenv('FLASK_ENV') == 'development':
+        # Only use Flask development server in development
+        # flask run --host=0.0.0.0 --port=5000
+        print("Development mode: Use 'flask run --host=0.0.0.0 --port=5000' to start the server")
+        app.run(host="0.0.0.0", port=5000, debug=debug_mode)
+    else:
+        # In production, this should be run with gunicorn
+        # gunicorn app:app --bind 0.0.0.0:5000
+        print("Production mode: Use 'gunicorn app:app --bind 0.0.0.0:5000' to start the server")
+        app.run(host="0.0.0.0", port=5000, debug=debug_mode)
