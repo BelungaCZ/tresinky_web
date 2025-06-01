@@ -6,6 +6,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - DATABASE_URL=sqlite:///tresinky.db
       - VIRTUAL_HOST=${VIRTUAL_HOST:-sad-tresinky-cetechovice.cz}
+      - VIRTUAL_PORT=5000
       - LETSENCRYPT_HOST=${LETSENCRYPT_HOST:-sad-tresinky-cetechovice.cz}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@sad-tresinky-cetechovice.cz}
       # Disable HTTPS redirect due to self-signed certificates causing SSL errors
