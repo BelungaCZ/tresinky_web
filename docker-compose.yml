@@ -8,6 +8,9 @@ services:
       - VIRTUAL_HOST=${VIRTUAL_HOST:-sad-tresinky-cetechovice.cz}
       - LETSENCRYPT_HOST=${LETSENCRYPT_HOST:-sad-tresinky-cetechovice.cz}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@sad-tresinky-cetechovice.cz}
+      # Disable HTTPS redirect due to self-signed certificates causing SSL errors
+      # Remove this line after replacing self-signed certs with Let's Encrypt certificates
+      - HTTPS_METHOD=noredirect
     volumes:
       - .:/app
       - ./static/uploads:/app/static/uploads
