@@ -40,5 +40,5 @@ echo "Environment variables are now loaded from .env.$ENV"
 # If switching to production, remind about SSL
 if [ "$ENV" = "production" ]; then
     echo ""
-    echo "Remember to run ./scripts/generate_ssl.sh if SSL certificates are not set up"
+    echo "SSL certificates are managed by Let's Encrypt for the production environment."
 fi 
