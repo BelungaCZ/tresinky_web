@@ -12,6 +12,7 @@ services:
       - .:/app
       - ./static/uploads:/app/static/uploads
       - ./instance:/app/instance
+      - ./logs:/app/logs
     env_file:
       - .env.${FLASK_ENV:-development}
     restart: unless-stopped
