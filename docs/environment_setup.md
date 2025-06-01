@@ -133,7 +133,7 @@ The Nginx configuration (`config/nginx.conf`) includes:
 
 2. Start the services:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. Verify the deployment:
@@ -144,15 +144,15 @@ The Nginx configuration (`config/nginx.conf`) includes:
 ## Monitoring and Maintenance
 
 ### Logs
-- Application logs: `docker-compose logs web`
-- Nginx logs: `docker-compose logs nginx`
+- Application logs: `docker compose logs web`
+- Nginx logs: `docker compose logs nginx`
 
 ### Updates
 1. Pull latest changes
 2. Rebuild containers:
    ```bash
-   docker-compose down
-   docker-compose up -d --build
+   docker compose down
+   docker compose up -d --build
    ```
 
 ### Backup

@@ -28,10 +28,10 @@ ln -sf ".env.$ENV" .env
 export FLASK_ENV=$ENV
 
 # Stop existing containers
-docker-compose down
+docker compose down
 
 # Start containers with new environment
-docker-compose up -d
+docker compose up -d
 
 echo "Switched to $ENV environment"
 
