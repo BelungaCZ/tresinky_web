@@ -5,9 +5,9 @@ services:
       - FLASK_ENV=${FLASK_ENV:-development}
       - SECRET_KEY=${SECRET_KEY:-your-secret-key-here}
       - DATABASE_URL=sqlite:///tresinky.db
-      - VIRTUAL_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-      - LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
+      - VIRTUAL_HOST=${VIRTUAL_HOST:-sad-tresinky-cetechovice.cz}
+      - LETSENCRYPT_HOST=${LETSENCRYPT_HOST:-sad-tresinky-cetechovice.cz}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@sad-tresinky-cetechovice.cz}
     volumes:
       - .:/app
       - ./static/uploads:/app/static/uploads
