@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if environment is development
+if [ "$FLASK_ENV" != "development" ]; then
+    echo "Error: SSL certificates should only be generated in development environment"
+    echo "For production, SSL certificates are managed by Let's Encrypt"
+    exit 1
+fi
+
 # Create SSL directory if it doesn't exist
 mkdir -p ssl
 
