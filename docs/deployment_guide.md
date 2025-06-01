@@ -6,7 +6,7 @@
 2. Git installed
 3. Access to the server
 4. Domain name configured
-5. SSL certificates (for production)
+5. SSL certificates (self signed for development; for production SSL certificates will be managed by Let's Encrypt)
 
 ## Initial Setup
 
@@ -30,8 +30,6 @@
    - Update `.env.production` for production deployment
 
 ## Development Deployment
-
-
 
 1. Generate self signed SSL certificate for development:
    ```bash
@@ -58,7 +56,7 @@
 
 ## Production Deployment
 
-1. For production, SSL certificates will be managed by Let's Encrypt.
+1. SSL certificates will be managed by Let's Encrypt.
 
 2. Switch to production environment:
    ```bash
@@ -99,11 +97,8 @@ cp instance/tresinky.db.backup instance/tresinky.db
 - Certificates stored in `ssl/` directory
 
 ### Production
-1. Obtain SSL certificates from a trusted CA
-2. Place certificates in `ssl/` directory:
-   - `ssl/cert.pem`
-   - `ssl/key.pem`
-3. Update Nginx configuration if needed
+1. SSL certificates will be managed by Let's Encrypt.
+2. Update Nginx configuration if needed
 
 ## Monitoring
 
@@ -143,9 +138,7 @@ docker compose logs -f web
 3. Verify data integrity
 
 ### SSL Certificate Renewal
-1. Obtain new certificates
-2. Replace existing certificates
-3. Reload Nginx:
+1. Reload Nginx:
    ```bash
    docker compose restart nginx
    ```
@@ -214,6 +207,7 @@ docker compose logs -f web
    - [ ] Security headers
    - [ ] SSL configuration
    - [ ] Access restrictions
+   - [ ] HTTP2 support
 
 4. Application
    - [ ] Debug mode disabled
@@ -226,7 +220,7 @@ docker compose logs -f web
 1. Database
 2. SSL certificates
 3. Configuration files
-4. Uploaded files
+4. Uploaded gallery files
 
 ### Recovery Procedure
 1. Stop services
@@ -262,6 +256,7 @@ docker compose logs -f web
 - Update dependencies
 - Review security settings
 - Optimize configuration
+- Check disk space
 
 ## Support
 
