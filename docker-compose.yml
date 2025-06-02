@@ -7,8 +7,8 @@ services:
       - DATABASE_URL=sqlite:///tresinky.db
       - VIRTUAL_HOST=${VIRTUAL_HOST:-sad-tresinky-cetechovice.cz}
       - VIRTUAL_PORT=5000
-      # - LETSENCRYPT_HOST=${LETSENCRYPT_HOST:-sad-tresinky-cetechovice.cz}
-      # - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@sad-tresinky-cetechovice.cz}
+      - LETSENCRYPT_HOST=${LETSENCRYPT_HOST:-sad-tresinky-cetechovice.cz}
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@sad-tresinky-cetechovice.cz}
 
     volumes:
       - .:/app
@@ -21,62 +21,62 @@ services:
     networks:
       - app-network
 
-  # Simple HTTP-only nginx (temporary solution)
+  # Simple HTTP-only nginx (temporary solution - DISABLED for SSL)
   # Use this instead of nginx-proxy to avoid SSL certificate issues
-  nginx:
-    image: nginx:alpine
-    container_name: nginx-server
-    ports:
-      - "80:80"
-    volumes:
-      - ./config/nginx-http-only.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/app/static:ro
-    depends_on:
-      - web
-    restart: unless-stopped
-    networks:
-      - app-network
-
-  # nginx-proxy service (commented out due to SSL certificate issues)
-  # Uncomment when Let's Encrypt rate limit is resolved and SSL certificates work properly
-#  nginx-proxy:
-#    image: nginxproxy/nginx-proxy:alpine
-#    container_name: nginx-proxy
+#  nginx:
+#    image: nginx:alpine
+#    container_name: nginx-server
 #    ports:
-#      - "${NGINX_HTTP_PORT:-80}:80"
-#      - "${NGINX_HTTPS_PORT:-443}:443"
+#      - "80:80"
 #    volumes:
-#      - /var/run/docker.sock:/tmp/docker.sock:ro
-#      - nginx_certs:/etc/nginx/certs
-#      - nginx_vhost:/etc/nginx/vhost.d
-#      - nginx_html:/usr/share/nginx/html
-#      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./config/nginx-http-only.conf:/etc/nginx/nginx.conf:ro
 #      - ./static:/app/static:ro
-#    env_file:
-#      - .env.${FLASK_ENV:-development}
+#    depends_on:
+#      - web
 #    restart: unless-stopped
 #    networks:
 #      - app-network
 
-  # Let's Encrypt companion (commented out - only 5 certificates allowed per 168 hours)
-  # Enable after June 2, 2025 when rate limit resets
-#  nginx-letsencrypt:
-#    image: nginxproxy/acme-companion
-#    container_name: nginx-letsencrypt
-#    environment:
-#      - NGINX_PROXY_CONTAINER=nginx-proxy
-#    volumes:
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
-#      - nginx_certs:/etc/nginx/certs
-#      - nginx_vhost:/etc/nginx/vhost.d
-#      - nginx_html:/usr/share/nginx/html
-#    depends_on:
-#      - nginx-proxy
-#    # In case of SSL error. Only 5 certs alowed within 168 hours!
-#    # restart: unless-stopped
-#    restart: "no"
-#    networks:
-#      - app-network
+  # nginx-proxy service (SSL enabled)
+  # Uncommented for SSL support with Let's Encrypt
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"  # SSL certificates are ready, enabling HTTPS
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+      # - ./config/nginx.conf:/etc/nginx/nginx.conf:ro  # Temporarily disabled for SSL setup
+      - ./static:/app/static:ro
+    env_file:
+      - .env.${FLASK_ENV:-development}
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Let's Encrypt companion (SSL certificates enabled)
+  # Enabled for automatic SSL certificate management
+  nginx-letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-letsencrypt
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - nginx_certs:/etc/nginx/certs
+      - nginx_vhost:/etc/nginx/vhost.d
+      - nginx_html:/usr/share/nginx/html
+    depends_on:
+      - nginx-proxy
+    # In case of SSL error. Only 5 certs alowed within 168 hours!
+    # restart: unless-stopped
+    restart: unless-stopped
+    networks:
+      - app-network
 
 volumes:
   nginx_certs:
