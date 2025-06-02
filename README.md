@@ -2,9 +2,11 @@
 
 ## Overview
 Web application for Třešinky Cetechovice, featuring a gallery, contact form, and donation system.
+It should run faster than 90% other webpages on mobile devices. Speed is the key.
 
 ## Features
 - Responsive design for all devices
+- Maximum possible speed
 - Image gallery with album support
 - Contact form
 - Donation system
@@ -29,6 +31,12 @@ Web application for Třešinky Cetechovice, featuring a gallery, contact form, a
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация по исправлениям
 
 ## Technical Details
+
+### Site speed
+- Using fast CSS
+- HTTP2
+- Casching
+- Small size
 
 ### Image Processing
 - Images are automatically resized and converted to WebP format
