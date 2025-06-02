@@ -4,6 +4,45 @@
 
 # IMPLEMENTATION PLAN - SSL Setup with Let's Encrypt
 
+## ТЕКУЩАЯ ЗАДАЧА: Исправление ERR_TOO_MANY_REDIRECTS для статических файлов
+
+### ПРОБЛЕМА
+Все статические файлы (CSS, JS, images, favicon.ico) не загружаются с ошибкой `net::ERR_TOO_MANY_REDIRECTS`.
+
+### ДИАГНОСТИКА  
+**Корневая причина:** nginx-proxy получает переменные `VIRTUAL_HOST` и `LETSENCRYPT_HOST` из `.env.production` через `env_file` и регистрирует сам себя как backend сервер.
+
+**Результат в upstream:**
+```
+upstream sad-tresinky-cetechovice.cz {
+    server 172.23.0.2:5000;  # Flask приложение ✅  
+    server 172.23.0.3:80;    # nginx-proxy сам на себя ❌
+}
+```
+
+**Циклическая проксификация:** nginx-proxy → nginx-proxy → nginx-proxy... = ERR_TOO_MANY_REDIRECTS
+
+### РЕШЕНИЕ
+Удалить `env_file: .env.production` из `nginx-proxy` и `nginx-letsencrypt` сервисов в `docker-compose.yml`
+
+### IMPLEMENTATION CHECKLIST:
+- [x] ✅ 1. Создать backup текущего docker-compose.yml
+- [x] ✅ 2. Обновить IMPLEMENTATION_PLAN.md с новой задачей  
+- [x] ✅ 3. Отредактировать docker-compose.yml: удалить `env_file` из nginx-proxy сервиса
+- [x] ✅ 4. Отредактировать docker-compose.yml: убедиться что nginx-letsencrypt не имеет env_file
+- [x] ✅ 5. Добавить только необходимые переменные для nginx-proxy через environment
+- [ ] 6. Остановить текущие контейнеры gracefully
+- [ ] 7. Запустить обновленную конфигурацию
+- [ ] 8. Проверить новый upstream блок в nginx-proxy конфигурации
+- [ ] 9. Протестировать загрузку статических файлов (CSS, JS, images)
+- [ ] 10. Проверить основную функциональность сайта
+- [ ] 11. Обновить статус в IMPLEMENTATION_PLAN.md
+
+**Начато:** 2025-06-02 17:52
+**Статус:** В ПРОЦЕССЕ
+
+---
+
 ## Текущая задача
 Настроить SSL сертификаты с Let's Encrypt для перехода с http://sad-tresinky-cetechovice.cz на https://sad-tresinky-cetechovice.cz
 
