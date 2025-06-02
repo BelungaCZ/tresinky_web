@@ -17,7 +17,21 @@ import subprocess
 from wtforms.validators import ValidationError
 from flask_sock import Sock
 import json
+import shutil
 from config.config import get_config
+
+# Импорты нашей системы логирования и валидации
+from utils import (
+    upload_logger, 
+    processing_logger, 
+    validation_logger, 
+    app_logger,
+    database_logger,
+    log_function_call, 
+    log_exception, 
+    log_file_operation,
+    file_validator
+)
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='static', static_url_path='/static')
@@ -31,6 +45,39 @@ sock = Sock(app)
 
 # WebSocket connection storage
 upload_sockets = set()
+
+def check_system_dependencies():
+    """Проверка необходимых системных зависимостей при запуске."""
+    log_function_call(app_logger, 'check_system_dependencies')
+    
+    dependencies = {
+        'convert': 'ImageMagick',
+        'identify': 'ImageMagick', 
+        'heif-convert': 'libheif-tools'
+    }
+    
+    missing_deps = []
+    
+    for command, package in dependencies.items():
+        try:
+            result = subprocess.run(['which', command], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                app_logger.info(f"Dependency check passed: {command} found at {result.stdout.strip()}")
+            else:
+                missing_deps.append(f"{command} ({package})")
+                app_logger.warning(f"Dependency check failed: {command} not found")
+        except Exception as e:
+            log_exception(app_logger, e, f'checking dependency {command}')
+            missing_deps.append(f"{command} ({package})")
+    
+    if missing_deps:
+        error_msg = f"Missing system dependencies: {', '.join(missing_deps)}"
+        app_logger.error(error_msg)
+        app_logger.error("Please install missing dependencies before running the application")
+        return False, missing_deps
+    
+    app_logger.info("All system dependencies check passed")
+    return True, []
 
 @sock.route('/ws/upload')
 def upload_progress(ws):
@@ -168,20 +215,53 @@ class ImageEditForm(FlaskForm):
             self.album.data = kwargs['obj'].category
 
 def get_image_date(image_path):
+    """
+    Извлекает дату создания изображения из EXIF или метаданных файла.
+    
+    Args:
+        image_path: Путь к файлу изображения
+        
+    Returns:
+        datetime: Дата создания изображения
+    """
+    log_function_call(processing_logger, 'get_image_date', image_path=image_path)
+    
     try:
-        # Try to get date from EXIF data
-        with open(image_path, 'rb') as f:
-            tags = exifread.process_file(f)
-            if 'EXIF DateTimeOriginal' in tags:
-                date_str = str(tags['EXIF DateTimeOriginal'])
-                return datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
-    except:
-        pass
-
-    try:
-        # If no EXIF data, get file creation/modification time
-        return datetime.fromtimestamp(os.path.getmtime(image_path))
-    except:
+        # Проверяем существование файла
+        if not os.path.exists(image_path):
+            processing_logger.warning(f"Image file not found: {image_path}")
+            return datetime.now()
+        
+        # Пытаемся получить дату из EXIF данных
+        try:
+            with open(image_path, 'rb') as f:
+                tags = exifread.process_file(f, stop_tag='EXIF DateTimeOriginal')
+                if 'EXIF DateTimeOriginal' in tags:
+                    date_str = str(tags['EXIF DateTimeOriginal'])
+                    date_obj = datetime.strptime(date_str, '%Y:%m:%d %H:%M:%S')
+                    processing_logger.info(f"EXIF date found for {image_path}: {date_obj}")
+                    return date_obj
+                else:
+                    processing_logger.info(f"No EXIF DateTimeOriginal found in {image_path}")
+        except Exception as exif_error:
+            log_exception(processing_logger, exif_error, f'reading EXIF from {image_path}')
+        
+        # Если EXIF не удалось прочитать, пытаемся получить дату модификации файла
+        try:
+            mtime = os.path.getmtime(image_path)
+            date_obj = datetime.fromtimestamp(mtime)
+            processing_logger.info(f"Using file modification time for {image_path}: {date_obj}")
+            return date_obj
+        except Exception as mtime_error:
+            log_exception(processing_logger, mtime_error, f'getting modification time for {image_path}')
+        
+        # Если ничего не получилось, возвращаем текущее время
+        processing_logger.warning(f"Could not determine date for {image_path}, using current time")
+        return datetime.now()
+        
+    except Exception as e:
+        log_exception(processing_logger, e, f'get_image_date for {image_path}')
+        processing_logger.error(f"Critical error in get_image_date for {image_path}, using current time")
         return datetime.now()
 
 # Routes
@@ -267,110 +347,294 @@ def donate():
 
 @app.route('/admin/upload', methods=['GET', 'POST'])
 def upload_image():
-    if request.method == 'POST':
-        form = ImageUploadForm()
-        if form.validate_on_submit():
-            files = request.files.getlist('image')
-            
-            # Filter out hidden files and ensure only supported file types
-            valid_files = [
-                file for file in files 
-                if file.filename and not file.filename.startswith('.') 
-                and file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.heic', '.mp4'))
-            ]
-            
-            total_files = len(valid_files)
-            processed_files = 0
-            
-            # Determine album name
-            album_name = form.new_album.data if form.new_album.data else form.album.data
-            if not album_name:
-                return jsonify({'success': False, 'error': 'Vyberte album nebo zadejte název nového alba.'})
-            
-            # Create album directory if it doesn't exist
-            album_path = os.path.join('static', 'images', 'gallery', album_name)
-            os.makedirs(album_path, exist_ok=True)
-            
-            for file in valid_files:
-                if file.filename:
-                    # Get the file extension and convert to lowercase
-                    _, ext = os.path.splitext(file.filename)
-                    ext = ext.lower()
-                    
-                    # Generate a secure filename
-                    filename = secure_filename(file.filename)
-                    
-                    # Update progress
-                    send_progress_update(filename, int((processed_files / total_files) * 100))
-                    
-                    # Save the file temporarily in the album directory
-                    temp_path = os.path.join(album_path, filename)
-                    file.save(temp_path)
-                    
-                    try:
-                        if ext in ['.jpg', '.jpeg', '.png', '.webp', '.heic']:
-                            # Process as image
-                            subprocess.run(['./scripts/process_image.sh', temp_path, 'gallery'], check=True)
-                            
-                            # Get the processed filename (same name but .webp extension)
-                            processed_filename = os.path.splitext(filename)[0] + '.webp'
-                            
-                            # Get image date from EXIF or file metadata
-                            image_date = get_image_date(temp_path)
-                            
-                            # Create new gallery image with correct path
-                            gallery_image = GalleryImage(
-                                filename=os.path.join('images', 'gallery', album_name, processed_filename),
-                                title=form.title.data or os.path.splitext(filename)[0],
-                                description=form.description.data,
-                                date=image_date,
-                                original_date=image_date,
-                                category=album_name
-                            )
-                            
-                            db.session.add(gallery_image)
-                            
-                        elif ext == '.mp4':
-                            # Handle video file
-                            # For now, just move it to the album directory
-                            final_path = os.path.join(album_path, filename)
-                            os.rename(temp_path, final_path)
-                            
-                            # Create gallery entry for video with correct path
-                            gallery_image = GalleryImage(
-                                filename=os.path.join('images', 'gallery', album_name, filename),
-                                title=form.title.data or os.path.splitext(filename)[0],
-                                description=form.description.data,
-                                date=datetime.now(),
-                                original_date=datetime.now(),
-                                category=album_name
-                            )
-                            
-                            db.session.add(gallery_image)
-                        
-                        # Remove the temporary file if it still exists
-                        if os.path.exists(temp_path):
-                            os.remove(temp_path)
-                            
-                    except subprocess.CalledProcessError as e:
-                        return jsonify({'success': False, 'error': f'Error processing file {filename}: {str(e)}'})
-                    
-                    processed_files += 1
-            
-            db.session.commit()
-            return jsonify({'success': True})
-        
-        # If form validation fails, return the specific error
-        if form.errors:
-            error_message = 'Form validation failed: '
-            for field, errors in form.errors.items():
-                error_message += f'{field}: {", ".join(errors)}; '
-            return jsonify({'success': False, 'error': error_message.strip()})
-        
-        return jsonify({'success': False, 'error': 'Form validation failed'})
+    """
+    Обработка загрузки изображений с полным логированием и exception handling.
+    """
+    log_function_call(upload_logger, 'upload_image', method=request.method)
     
-    form = ImageUploadForm()
-    return render_template('upload.html', form=form)
+    if request.method == 'POST':
+        try:
+            form = ImageUploadForm()
+            if form.validate_on_submit():
+                upload_logger.info("Form validation passed")
+                
+                files = request.files.getlist('image')
+                upload_logger.info(f"Received {len(files)} files for upload")
+                
+                # Валидация и фильтрация файлов с помощью нашего валидатора
+                valid_files = []
+                invalid_files = []
+                
+                for file in files:
+                    if not file.filename:
+                        continue
+                        
+                    # Проверяем, что файл не скрытый
+                    if file.filename.startswith('.'):
+                        log_file_operation(upload_logger, 'validation', file.filename, 'warning', 'Hidden file skipped')
+                        continue
+                    
+                    # Используем наш валидатор
+                    try:
+                        is_valid, secure_name, error_msg = file_validator.validate_file(file.filename)
+                        if is_valid:
+                            valid_files.append((file, secure_name))
+                            log_file_operation(upload_logger, 'validation', file.filename, 'success', f'Valid file: {secure_name}')
+                        else:
+                            invalid_files.append((file.filename, error_msg))
+                            log_file_operation(upload_logger, 'validation', file.filename, 'error', error_msg)
+                    except Exception as validation_error:
+                        log_exception(upload_logger, validation_error, f'validating file {file.filename}')
+                        invalid_files.append((file.filename, f"Validation error: {str(validation_error)}"))
+                
+                if not valid_files:
+                    error_msg = "No valid files found for upload"
+                    if invalid_files:
+                        error_msg += f". Invalid files: {'; '.join([f'{f[0]}: {f[1]}' for f in invalid_files[:3]])}"
+                    upload_logger.error(error_msg)
+                    return jsonify({'success': False, 'error': error_msg})
+                
+                upload_logger.info(f"Validation complete: {len(valid_files)} valid files, {len(invalid_files)} invalid files")
+                
+                # Валидация и нормализация album name
+                try:
+                    album_name = form.new_album.data.strip() if form.new_album.data else form.album.data
+                    
+                    if not album_name:
+                        error_msg = 'Vyberte album nebo zadejte název nového alba.'
+                        upload_logger.error(error_msg)
+                        return jsonify({'success': False, 'error': error_msg})
+                    
+                    # Нормализуем имя альбома с помощью нашего валидатора
+                    album_name = file_validator.normalize_czech_filename(album_name)
+                    # Дополнительная очистка для имен директорий
+                    album_name = re.sub(r'[<>:"|?*]', '', album_name)  # Удаляем запрещенные символы
+                    album_name = album_name.strip()
+                    
+                    if not album_name:
+                        error_msg = 'Недопустимое имя альбома после нормализации.'
+                        upload_logger.error(f"Album name normalization failed for: {form.new_album.data}")
+                        return jsonify({'success': False, 'error': error_msg})
+                    
+                    upload_logger.info(f"Album name validated: {album_name}")
+                    
+                except Exception as album_error:
+                    log_exception(upload_logger, album_error, 'validating album name')
+                    return jsonify({'success': False, 'error': f'Ошибка валидации имени альбома: {str(album_error)}'})
+                
+                # Создание директории альбома
+                try:
+                    album_path = os.path.join('static', 'images', 'gallery', album_name)
+                    os.makedirs(album_path, exist_ok=True)
+                    upload_logger.info(f"Album directory created/verified: {album_path}")
+                except Exception as dir_error:
+                    log_exception(upload_logger, dir_error, f'creating album directory {album_path}')
+                    return jsonify({'success': False, 'error': f'Не удалось создать директорию альбома: {str(dir_error)}'})
+                
+                # Обработка файлов
+                total_files = len(valid_files)
+                processed_files = 0
+                failed_files = []
+                
+                for file, secure_filename in valid_files:
+                    try:
+                        upload_logger.info(f"Processing file {processed_files + 1}/{total_files}: {file.filename}")
+                        
+                        # Получаем расширение файла
+                        _, ext = os.path.splitext(file.filename)
+                        ext = ext.lower()
+                        
+                        # Обновляем прогресс
+                        try:
+                            progress = int((processed_files / total_files) * 100)
+                            send_progress_update(secure_filename, progress)
+                        except Exception as progress_error:
+                            log_exception(upload_logger, progress_error, 'sending progress update')
+                        
+                        # Сохраняем файл временно
+                        temp_path = os.path.join(album_path, secure_filename)
+                        try:
+                            file.save(temp_path)
+                            log_file_operation(upload_logger, 'save', secure_filename, 'success', f'Saved to {temp_path}')
+                        except Exception as save_error:
+                            log_exception(upload_logger, save_error, f'saving file {secure_filename}')
+                            failed_files.append((file.filename, f"Save error: {str(save_error)}"))
+                            continue
+                        
+                        try:
+                            if ext in ['.jpg', '.jpeg', '.png', '.webp', '.heic']:
+                                # Обработка изображения
+                                try:
+                                    result = subprocess.run(
+                                        ['./scripts/process_image.sh', temp_path, 'gallery'], 
+                                        check=True,
+                                        capture_output=True,
+                                        text=True,
+                                        timeout=60  # 60 секунд таймаут
+                                    )
+                                    
+                                    processing_logger.info(f"Image processing completed for {secure_filename}")
+                                    if result.stdout:
+                                        processing_logger.info(f"Process output: {result.stdout}")
+                                    
+                                except subprocess.CalledProcessError as proc_error:
+                                    error_msg = f"Image processing failed: {proc_error}"
+                                    if proc_error.stderr:
+                                        error_msg += f" - {proc_error.stderr}"
+                                    log_exception(processing_logger, proc_error, f'processing image {secure_filename}')
+                                    failed_files.append((file.filename, error_msg))
+                                    
+                                    # Удаляем временный файл при ошибке
+                                    try:
+                                        if os.path.exists(temp_path):
+                                            os.remove(temp_path)
+                                    except:
+                                        pass
+                                    continue
+                                    
+                                except subprocess.TimeoutExpired as timeout_error:
+                                    error_msg = f"Image processing timeout: {timeout_error}"
+                                    log_exception(processing_logger, timeout_error, f'processing image {secure_filename}')
+                                    failed_files.append((file.filename, error_msg))
+                                    
+                                    # Удаляем временный файл при таймауте
+                                    try:
+                                        if os.path.exists(temp_path):
+                                            os.remove(temp_path)
+                                    except:
+                                        pass
+                                    continue
+                                
+                                # Получаем имя обработанного файла
+                                processed_filename = os.path.splitext(secure_filename)[0] + '.webp'
+                                
+                                # Получаем дату изображения
+                                try:
+                                    image_date = get_image_date(temp_path)
+                                except Exception as date_error:
+                                    log_exception(processing_logger, date_error, f'getting image date for {secure_filename}')
+                                    image_date = datetime.now()
+                                
+                                # Создаем запись в БД
+                                try:
+                                    gallery_image = GalleryImage(
+                                        filename=os.path.join('images', 'gallery', album_name, processed_filename),
+                                        title=form.title.data or os.path.splitext(secure_filename)[0],
+                                        description=form.description.data,
+                                        date=image_date,
+                                        original_date=image_date,
+                                        category=album_name
+                                    )
+                                    
+                                    db.session.add(gallery_image)
+                                    database_logger.info(f"Added gallery image to session: {processed_filename}")
+                                    
+                                except Exception as db_add_error:
+                                    log_exception(database_logger, db_add_error, f'creating GalleryImage for {secure_filename}')
+                                    failed_files.append((file.filename, f"Database error: {str(db_add_error)}"))
+                                    continue
+                                
+                            elif ext == '.mp4':
+                                # Обработка видео файла
+                                try:
+                                    final_path = os.path.join(album_path, secure_filename)
+                                    if temp_path != final_path:
+                                        os.rename(temp_path, final_path)
+                                    
+                                    log_file_operation(upload_logger, 'move', secure_filename, 'success', f'Video moved to {final_path}')
+                                    
+                                    # Создаем запись в БД для видео
+                                    gallery_image = GalleryImage(
+                                        filename=os.path.join('images', 'gallery', album_name, secure_filename),
+                                        title=form.title.data or os.path.splitext(secure_filename)[0],
+                                        description=form.description.data,
+                                        date=datetime.now(),
+                                        original_date=datetime.now(),
+                                        category=album_name
+                                    )
+                                    
+                                    db.session.add(gallery_image)
+                                    database_logger.info(f"Added video to session: {secure_filename}")
+                                    
+                                except Exception as video_error:
+                                    log_exception(upload_logger, video_error, f'processing video {secure_filename}')
+                                    failed_files.append((file.filename, f"Video processing error: {str(video_error)}"))
+                                    continue
+                            
+                            # Удаляем временный файл если он все еще существует
+                            try:
+                                if os.path.exists(temp_path):
+                                    os.remove(temp_path)
+                            except Exception as cleanup_error:
+                                log_exception(upload_logger, cleanup_error, f'cleaning up temp file {temp_path}')
+                            
+                            processed_files += 1
+                            log_file_operation(upload_logger, 'process', secure_filename, 'success', f'Completed processing')
+                            
+                        except Exception as file_process_error:
+                            log_exception(upload_logger, file_process_error, f'processing file {secure_filename}')
+                            failed_files.append((file.filename, f"Processing error: {str(file_process_error)}"))
+                            
+                            # Очистка при ошибке
+                            try:
+                                if os.path.exists(temp_path):
+                                    os.remove(temp_path)
+                            except:
+                                pass
+                            
+                    except Exception as outer_file_error:
+                        log_exception(upload_logger, outer_file_error, f'outer processing loop for {file.filename}')
+                        failed_files.append((file.filename, f"Unexpected error: {str(outer_file_error)}"))
+                
+                # Фиксируем изменения в БД
+                try:
+                    db.session.commit()
+                    database_logger.info(f"Successfully committed {processed_files} files to database")
+                    upload_logger.info(f"Upload completed: {processed_files}/{total_files} files processed successfully")
+                    
+                    if failed_files:
+                        upload_logger.warning(f"Some files failed: {len(failed_files)} failures")
+                        for failed_file, error in failed_files:
+                            upload_logger.warning(f"Failed file: {failed_file} - {error}")
+                    
+                    return jsonify({'success': True, 'processed': processed_files, 'failed': len(failed_files)})
+                    
+                except Exception as commit_error:
+                    log_exception(database_logger, commit_error, 'committing upload session')
+                    
+                    # Откат транзакции
+                    try:
+                        db.session.rollback()
+                        database_logger.info("Database rollback completed")
+                    except Exception as rollback_error:
+                        log_exception(database_logger, rollback_error, 'rolling back database session')
+                    
+                    return jsonify({'success': False, 'error': f'Ошибка сохранения в базе данных: {str(commit_error)}'})
+            
+            else:
+                # Ошибки валидации формы
+                upload_logger.warning("Form validation failed")
+                if form.errors:
+                    error_message = 'Form validation failed: '
+                    for field, errors in form.errors.items():
+                        error_message += f'{field}: {", ".join(errors)}; '
+                        upload_logger.warning(f"Form field error - {field}: {', '.join(errors)}")
+                    return jsonify({'success': False, 'error': error_message.strip()})
+                
+                return jsonify({'success': False, 'error': 'Form validation failed'})
+                
+        except Exception as upload_error:
+            log_exception(upload_logger, upload_error, 'upload_image POST request')
+            return jsonify({'success': False, 'error': f'Критическая ошибка загрузки: {str(upload_error)}'})
+    
+    # GET request - показываем форму
+    try:
+        form = ImageUploadForm()
+        upload_logger.info("Upload form rendered for GET request")
+        return render_template('upload.html', form=form)
+    except Exception as form_error:
+        log_exception(upload_logger, form_error, 'rendering upload form')
+        return render_template('upload.html', form=None)
 
 def sync_gallery_with_disk():
     """Synchronize database with files on disk"""
@@ -492,6 +756,24 @@ def delete_image(id):
     return redirect(url_for('manage_gallery'))
 
 if __name__ == '__main__':
+    # Проверяем системные зависимости при запуске
+    deps_ok, missing = check_system_dependencies()
+    if not deps_ok:
+        app_logger.error("Cannot start application due to missing dependencies")
+        app_logger.error(f"Please install: {', '.join(missing)}")
+        print(f"ERROR: Missing dependencies: {', '.join(missing)}")
+        print("Please install the missing dependencies before running the application")
+        exit(1)
+    
+    # Создаем таблицы БД
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            app_logger.info("Database tables created/verified successfully")
+        except Exception as db_error:
+            log_exception(app_logger, db_error, 'creating database tables')
+            print(f"ERROR: Failed to create database tables: {str(db_error)}")
+            exit(1)
+    
+    app_logger.info("Starting Třešinky Cetechovice application")
     app.run(host="0.0.0.0", port=5000, debug=True)

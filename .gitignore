@@ -26,8 +26,7 @@ MANIFEST
 
 # Virtual Environment
 .env
-.env.*
-!.env.example
+.env.production
 .venv
 env/
 venv/
@@ -80,6 +79,15 @@ media/
 static/images/gallery/
 static/images/hero/
 static/images/thumbnails/
+
+# Log files from our logging system
+logs/*.log
+logs/errors.log
+logs/upload.log
+logs/processing.log
+logs/validation.log
+logs/app.log
+logs/database.log
 
 # env.bak/
 # venv.bak/
