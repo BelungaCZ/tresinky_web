@@ -232,7 +232,19 @@ def get_image_date(image_path):
             processing_logger.warning(f"Image file not found: {image_path}")
             return datetime.now()
         
-        # Пытаемся получить дату из EXIF данных
+        # Специальная обработка для HEIC файлов
+        if image_path.lower().endswith(('.heic', '.heif')):
+            processing_logger.info(f"HEIC file detected, skipping EXIF parsing: {image_path}")
+            try:
+                mtime = os.path.getmtime(image_path)
+                date_obj = datetime.fromtimestamp(mtime)
+                processing_logger.info(f"Using file modification time for HEIC {image_path}: {date_obj}")
+                return date_obj
+            except Exception as mtime_error:
+                log_exception(processing_logger, mtime_error, f'getting modification time for HEIC {image_path}')
+                return datetime.now()
+        
+        # Пытаемся получить дату из EXIF данных для обычных изображений
         try:
             with open(image_path, 'rb') as f:
                 tags = exifread.process_file(f, stop_tag='EXIF DateTimeOriginal')
