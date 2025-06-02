@@ -54,13 +54,13 @@
 - [x] ✅ 5. Обновить `docker-compose.yml`: раскомментировать nginx-proxy сервис
 - [x] ✅ 6. Обновить `docker-compose.yml`: раскомментировать nginx-letsencrypt сервис
 - [x] ✅ 7. Обновить `docker-compose.yml`: изменить restart policy для letsencrypt на "unless-stopped"
-- [ ] 8. Проверить `.env.production`: убедиться что все SSL переменные настроены
-- [ ] 9. Остановить текущие контейнеры gracefully
-- [ ] 10. Запустить новую конфигурацию с nginx-proxy (без letsencrypt сначала)
-- [ ] 11. Проверить HTTP доступ через nginx-proxy
-- [ ] 12. Активировать nginx-letsencrypt для получения SSL сертификатов
-- [ ] 13. Дождаться получения сертификатов (мониторинг логов)
-- [ ] 14. Проверить HTTPS доступ: https://sad-tresinky-cetechovice.cz
+- [x] ✅ 8. Проверить `.env.production`: убедиться что все SSL переменные настроены
+- [x] ✅ 9. Остановить текущие контейнеры gracefully
+- [x] ✅ 10. Запустить новую конфигурацию с nginx-proxy (без letsencrypt сначала)
+- [x] ✅ 11. Проверить HTTP доступ через nginx-proxy
+- [x] ✅ 12. Активировать nginx-letsencrypt для получения SSL сертификатов
+- [x] ✅ 13. Дождаться получения сертификатов (мониторинг логов)
+- [x] ✅ 14. Проверить HTTPS доступ: https://sad-tresinky-cetechovice.cz
 - [ ] 15. Верифицировать SSL сертификат и безопасность
 - [ ] 16. Протестировать все функции сайта через HTTPS
 - [ ] 17. Настроить редирект с HTTP на HTTPS
