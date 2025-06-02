@@ -1,6 +1,10 @@
+🏠 [Главная](README.md) | 🚀 [Environment Setup](docs/environment_setup.md) | 🌐 [Deployment Guide](docs/deployment_guide.md) | 💻 [Implementation Plan](IMPLEMENTATION_PLAN.md)
+
+---
+
 # Changelog
 
-## [Unreleased] - 2024-03-19
+## [Unreleased] - 2025-05-30
 
 ### Added
 - Environment configuration system with development and production settings
@@ -67,4 +71,14 @@
 ### Running Tests
 ```bash
 ./run_tests.sh
-``` 
+```
+
+---
+
+## 🔗 См. также
+
+- **🏠 [Главная](README.md)** - Основная документация проекта
+- **🚀 [Environment Setup](docs/environment_setup.md)** - Настройка окружения для разработки
+- **🌐 [Deployment Guide](docs/deployment_guide.md)** - Руководство по деплою
+- **💻 [Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация исправлений
+- **⬅️ [Назад: Главная](README.md)** | **➡️ [Далее: Environment Setup](docs/environment_setup.md)** 

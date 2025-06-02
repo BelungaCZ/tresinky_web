@@ -1,3 +1,7 @@
+🏠 [Главная](../README.md) | 📋 [Changelog](../CHANGELOG.md) | 💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md) | 🚀 [Environment Setup](environment_setup.md)
+
+---
+
 # Deployment Guide
 
 ## Prerequisites
@@ -264,3 +268,13 @@ For issues and support:
 1. Check documentation
 2. Review logs
 3. Contact development team 
+
+---
+
+## 🔗 См. также
+
+- **🏠 [Главная](../README.md)** - Основная документация проекта
+- **🚀 [Environment Setup](environment_setup.md)** - Детальная настройка окружения
+- **💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md)** - Техническая документация
+- **📋 [Changelog](../CHANGELOG.md)** - История изменений проекта
+- **⬅️ [Назад: Environment Setup](environment_setup.md)** | **➡️ [Далее: Changelog](../CHANGELOG.md)** 

@@ -1,3 +1,7 @@
+🏠 [Главная](../README.md) | 📋 [Changelog](../CHANGELOG.md) | 💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md) | 🌐 [Deployment Guide](deployment_guide.md)
+
+---
+
 # Environment Setup and Configuration
 
 ## Overview
@@ -203,4 +207,14 @@ The Nginx configuration (`config/nginx.conf`) includes:
    - Regular backups
    - Log monitoring
    - Security updates
-   - Performance optimization 
+   - Performance optimization
+
+---
+
+## 🔗 См. также
+
+- **🏠 [Главная](../README.md)** - Основная документация проекта
+- **🌐 [Deployment Guide](deployment_guide.md)** - Полное руководство по деплою
+- **💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md)** - Техническая документация
+- **📋 [Changelog](../CHANGELOG.md)** - История изменений проекта
+- **⬅️ [Назад: Changelog](../CHANGELOG.md)** | **➡️ [Далее: Deployment Guide](deployment_guide.md)** 

@@ -14,6 +14,20 @@ Web application for Třešinky Cetechovice, featuring a gallery, contact form, a
 - Automatic image optimization and WebP conversion
 - Album management with automatic cleanup of empty directories
 
+## 📚 Документация
+
+### 🚀 Setup & Configuration
+- **[Environment Setup](docs/environment_setup.md)** - Настройка окружения разработки и продакшена
+- **[Deployment Guide](docs/deployment_guide.md)** - Полное руководство по деплою приложения
+
+### 💻 Development  
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Детальный план реализации исправлений и улучшений
+- **[Changelog](CHANGELOG.md)** - История изменений и обновлений проекта
+
+### 📋 Maintenance
+- **[Changelog](CHANGELOG.md)** - Отслеживание версий и изменений
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация по исправлениям
+
 ## Technical Details
 
 ### Image Processing
@@ -136,3 +150,14 @@ static/
 
 ## License
 [Your License Here] 
+
+---
+
+## 🔗 См. также
+
+- **[Environment Setup](docs/environment_setup.md)** - Детальная настройка окружения для разработки и продакшена
+- **[Deployment Guide](docs/deployment_guide.md)** - Пошаговое руководство по деплою
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация и план исправлений
+- **[Changelog](CHANGELOG.md)** - История версий и обновлений проекта
+
+
