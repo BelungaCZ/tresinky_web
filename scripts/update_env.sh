@@ -1,11 +1,29 @@
 #!/bin/bash
 
-# Update .env.production
-cat > .env.production << EOL
+# Function to handle environment file update
+update_env_file() {
+    local env_file=".env.$1"
+    if [ -f "$env_file" ]; then
+        read -p "Warning: $env_file already exists. Do you want to update it? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Skipping $env_file update"
+            return
+        fi
+    fi
+    
+    # Create backup of existing file
+    if [ -f "$env_file" ]; then
+        cp "$env_file" "${env_file}.bak"
+        echo "Created backup of existing $env_file as ${env_file}.bak"
+    fi
+    
+    # Update environment file
+    cat > "$env_file" << EOL
 # Flask configuration
-FLASK_ENV=production
+FLASK_ENV=$1
 FLASK_APP=app.py
-SECRET_KEY=XXXXX
+SECRET_KEY=$(openssl rand -hex 32)
 
 # Database configuration
 DATABASE_URL=sqlite:///tresinky.db
@@ -17,48 +35,16 @@ NGINX_HTTPS_PORT=443
 # Domain configuration
 VIRTUAL_HOST=sad-tresinky-cetechovice.cz
 LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-LETSENCRYPT_EMAIL=ssfskype@gmail.com
+LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
 EOL
+    echo "Updated $env_file"
+}
 
-# Create .env.development
-cat > .env.development << EOL
-# Flask configuration
-FLASK_ENV=development
-FLASK_APP=app.py
-SECRET_KEY=dev-secret-key-here
+# Update development environment file
+update_env_file "development"
 
-# Database configuration
-DATABASE_URL=sqlite:///tresinky.db
+# Update production environment file
+update_env_file "production"
 
-# Nginx configuration
-NGINX_HTTP_PORT=80
-NGINX_HTTPS_PORT=443
-
-# Domain configuration
-VIRTUAL_HOST=sad-tresinky-cetechovice.cz
-LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-LETSENCRYPT_EMAIL=ssfskype@gmail.com
-EOL
-
-# Create .env.example
-cat > .env.example << EOL
-# Flask configuration
-FLASK_ENV=development
-FLASK_APP=app.py
-SECRET_KEY=your-secret-key-here
-
-# Database configuration
-DATABASE_URL=sqlite:///tresinky.db
-
-# Nginx configuration
-NGINX_HTTP_PORT=80
-NGINX_HTTPS_PORT=443
-
-# Domain configuration
-VIRTUAL_HOST=sad-tresinky-cetechovice.cz
-LETSENCRYPT_HOST=sad-tresinky-cetechovice.cz
-LETSENCRYPT_EMAIL=your-email@example.com
-EOL
-
-echo "Environment files have been updated!"
-echo "Please verify the contents of .env.production, .env.development, and .env.example" 
+echo "Environment files update complete!"
+echo "Please review the updated values in .env.development and .env.production" 

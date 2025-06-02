@@ -12,7 +12,6 @@ The development environment is configured for local development and testing. It 
 
 - Debug mode enabled
 - Local database
-- HTTP only
 - Development-specific settings
 
 Configuration file: `.env.development`
@@ -23,7 +22,7 @@ FLASK_DEBUG=1
 SECRET_KEY=your-development-secret-key
 DATABASE_URL=sqlite:///tresinky.db
 DOMAIN=localhost:5000
-USE_HTTPS=false
+USE_HTTPS=true
 ```
 
 ### Production Environment
@@ -44,8 +43,6 @@ SECRET_KEY=your-production-secret-key
 DATABASE_URL=sqlite:///tresinky.db
 DOMAIN=sad-tresinky-cetechovice.cz
 USE_HTTPS=true
-SSL_CERT_PATH=/etc/nginx/ssl/cert.pem
-SSL_KEY_PATH=/etc/nginx/ssl/key.pem
 ```
 
 ## Docker Configuration
@@ -70,13 +67,12 @@ The application uses Docker for containerization and deployment. The `docker-com
 
 ## SSL Configuration
 
-SSL certificates are required for the production environment. The `scripts/generate_ssl.sh` script can generate self-signed certificates for development:
+SSL certificates will be managed by Let's Encrypt for the production environment. 
+The `scripts/generate_ssl.sh` script can generate self-signed certificates for development:
 
 ```bash
 ./scripts/generate_ssl.sh
 ```
-
-For production, you should use proper SSL certificates from a trusted certificate authority.
 
 ## Environment Switching
 
@@ -108,9 +104,10 @@ The Nginx configuration (`config/nginx.conf`) includes:
 ## Security Measures
 
 ### Development
-- Debug mode for easier development
+- Debug mode enabled for easier development
 - Local database
 - HTTP for local access
+- HTTPS for local testing
 - Development-specific security settings
 
 ### Production
@@ -120,20 +117,18 @@ The Nginx configuration (`config/nginx.conf`) includes:
 - Production-specific security settings
 - SSL/TLS configuration
 
-## Deployment Process
+## Production Deployment Process
 
 1. Prepare the environment:
-   ```bash
-   # Generate SSL certificates
-   ./scripts/generate_ssl.sh
-   
+
    # Switch to production environment
+   ```bash
    ./scripts/switch_env.sh production
    ```
 
 2. Start the services:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 3. Verify the deployment:
@@ -144,15 +139,14 @@ The Nginx configuration (`config/nginx.conf`) includes:
 ## Monitoring and Maintenance
 
 ### Logs
-- Application logs: `docker-compose logs web`
-- Nginx logs: `docker-compose logs nginx`
+- Application logs: `docker compose logs web`
+- Nginx logs: `docker compose logs nginx`
 
 ### Updates
 1. Pull latest changes
 2. Rebuild containers:
    ```bash
-   docker-compose down
-   docker-compose up -d --build
+   ./prod_rebuild.sh
    ```
 
 ### Backup

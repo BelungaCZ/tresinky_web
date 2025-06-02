@@ -6,7 +6,7 @@
 2. Git installed
 3. Access to the server
 4. Domain name configured
-5. SSL certificates (for production)
+5. SSL certificates (self signed for development; for production SSL certificates will be managed by Let's Encrypt)
 
 ## Initial Setup
 
@@ -31,26 +31,32 @@
 
 ## Development Deployment
 
-1. Switch to development environment:
+1. Generate self signed SSL certificate for development:
+   ```bash
+   ./scripts/generate_ssl.sh 
+   ```
+
+2. Switch to development environment:
    ```bash
    ./scripts/switch_env.sh development
    ```
 
-2. Start the services:
+3. Start the services:
    ```bash
-   docker-compose up -d
+   docker compose up -d
+   ```
+      or 
+   ```bash
+   flask run --host=0.0.0.0 --port=5000 
    ```
 
-3. Access the application:
+4. Access the application:
    - Web: http://localhost:5000
    - Admin: http://localhost:5000/admin
 
 ## Production Deployment
 
-1. Generate SSL certificates:
-   ```bash
-   ./scripts/generate_ssl.sh
-   ```
+1. SSL certificates will be managed by Let's Encrypt.
 
 2. Switch to production environment:
    ```bash
@@ -59,12 +65,12 @@
 
 3. Start the services:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 
 4. Verify the deployment:
-   - Check application logs: `docker-compose logs web`
-   - Check Nginx logs: `docker-compose logs nginx`
+   - Check application logs: `docker compose logs web`
+   - Check Nginx logs: `docker compose logs nginx`
    - Test HTTPS: https://sad-tresinky-cetechovice.cz
 
 ## Database Management
@@ -91,24 +97,21 @@ cp instance/tresinky.db.backup instance/tresinky.db
 - Certificates stored in `ssl/` directory
 
 ### Production
-1. Obtain SSL certificates from a trusted CA
-2. Place certificates in `ssl/` directory:
-   - `ssl/cert.pem`
-   - `ssl/key.pem`
-3. Update Nginx configuration if needed
+1. SSL certificates will be managed by Let's Encrypt.
+2. Update Nginx configuration if needed
 
 ## Monitoring
 
 ### Logs
 ```bash
 # Application logs
-docker-compose logs web
+docker compose logs web
 
 # Nginx logs
-docker-compose logs nginx
+docker compose logs nginx
 
 # Follow logs
-docker-compose logs -f web
+docker compose logs -f web
 ```
 
 ### Health Checks
@@ -125,8 +128,8 @@ docker-compose logs -f web
 
 2. Rebuild and restart:
    ```bash
-   docker-compose down
-   docker-compose up -d --build
+   docker compose down
+   docker compose up -d --build
    ```
 
 ### Database Updates
@@ -135,11 +138,9 @@ docker-compose logs -f web
 3. Verify data integrity
 
 ### SSL Certificate Renewal
-1. Obtain new certificates
-2. Replace existing certificates
-3. Reload Nginx:
+1. Reload Nginx:
    ```bash
-   docker-compose restart nginx
+   docker compose restart nginx
    ```
 
 ## Troubleshooting
@@ -149,19 +150,19 @@ docker-compose logs -f web
 1. Application Not Starting
    ```bash
    # Check logs
-   docker-compose logs web
+   docker compose logs web
    
    # Check container status
-   docker-compose ps
+   docker compose ps
    ```
 
 2. Nginx Issues
    ```bash
    # Check Nginx configuration
-   docker-compose exec nginx nginx -t
+   docker compose exec nginx nginx -t
    
    # Check Nginx logs
-   docker-compose logs nginx
+   docker compose logs nginx
    ```
 
 3. Database Issues
@@ -170,7 +171,7 @@ docker-compose logs -f web
    ls -l instance/tresinky.db
    
    # Check database logs
-   docker-compose logs db
+   docker compose logs db
    ```
 
 ### Performance Issues
@@ -182,12 +183,12 @@ docker-compose logs -f web
 
 2. Monitor logs for errors:
    ```bash
-   docker-compose logs -f
+   docker compose logs -f
    ```
 
 3. Check Nginx access logs:
    ```bash
-   docker-compose exec nginx tail -f /var/log/nginx/access.log
+   docker compose exec nginx tail -f /var/log/nginx/access.log
    ```
 
 ## Security Checklist
@@ -206,6 +207,7 @@ docker-compose logs -f web
    - [ ] Security headers
    - [ ] SSL configuration
    - [ ] Access restrictions
+   - [ ] HTTP2 support
 
 4. Application
    - [ ] Debug mode disabled
@@ -218,7 +220,7 @@ docker-compose logs -f web
 1. Database
 2. SSL certificates
 3. Configuration files
-4. Uploaded files
+4. Uploaded gallery files
 
 ### Recovery Procedure
 1. Stop services
@@ -254,6 +256,7 @@ docker-compose logs -f web
 - Update dependencies
 - Review security settings
 - Optimize configuration
+- Check disk space
 
 ## Support
 

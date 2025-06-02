@@ -28,10 +28,10 @@ ln -sf ".env.$ENV" .env
 export FLASK_ENV=$ENV
 
 # Stop existing containers
-docker-compose down
+docker compose down
 
 # Start containers with new environment
-docker-compose up -d
+docker compose up -d
 
 echo "Switched to $ENV environment"
 
@@ -40,5 +40,5 @@ echo "Environment variables are now loaded from .env.$ENV"
 # If switching to production, remind about SSL
 if [ "$ENV" = "production" ]; then
     echo ""
-    echo "Remember to run ./scripts/generate_ssl.sh if SSL certificates are not set up"
+    echo "SSL certificates are managed by Let's Encrypt for the production environment."
 fi 

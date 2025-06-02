@@ -23,19 +23,30 @@ EOL
     echo "Created .env.example"
 fi
 
+# Function to handle environment file creation
+create_env_file() {
+    local env_file=".env.$1"
+    if [ -f "$env_file" ]; then
+        read -p "Warning: $env_file already exists. Do you want to overwrite it? (y/N) " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Skipping $env_file creation"
+            return
+        fi
+    fi
+    
+    cp .env.example "$env_file"
+    if [ "$1" = "production" ]; then
+        sed -i '' 's/FLASK_ENV=development/FLASK_ENV=production/' "$env_file"
+    fi
+    echo "Created $env_file"
+}
+
 # Create development environment file
-if [ ! -f .env.development ]; then
-    cp .env.example .env.development
-    echo "Created .env.development"
-fi
+create_env_file "development"
 
 # Create production environment file
-if [ ! -f .env.production ]; then
-    cp .env.example .env.production
-    # Set production-specific values
-    sed -i '' 's/FLASK_ENV=development/FLASK_ENV=production/' .env.production
-    echo "Created .env.production"
-fi
+create_env_file "production"
 
 echo "Environment files setup complete!"
 echo "Please review and update the values in .env.development and .env.production" 

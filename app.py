@@ -788,4 +788,16 @@ if __name__ == '__main__':
             exit(1)
     
     app_logger.info("Starting Třešinky Cetechovice application")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug_mode = os.getenv('DEBUG', 'false').lower() == 'true'
+    print(f"Debug mode: {debug_mode}")
+
+    if os.getenv('FLASK_ENV') == 'development':
+        # Only use Flask development server in development
+        # flask run --host=0.0.0.0 --port=5000
+        print("Development mode: Use 'flask run --host=0.0.0.0 --port=5000' to start the server")
+        app.run(host="0.0.0.0", port=5000, debug=debug_mode)
+    else:
+        # In production, this should be run with gunicorn using config file
+        # gunicorn app:app -c gunicorn.conf.py
+        print("Production mode: Use 'gunicorn app:app -c gunicorn.conf.py' to start the server")
+        app.run(host="0.0.0.0", port=5000, debug=debug_mode)
