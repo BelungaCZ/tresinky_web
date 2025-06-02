@@ -34,7 +34,7 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 
 ### Site speed
 - Using fast CSS
-- HTTP2
+- HTTP/2
 - Casching
 - Small size
 
