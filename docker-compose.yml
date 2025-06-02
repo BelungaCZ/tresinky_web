@@ -47,9 +47,9 @@ services:
       - "${NGINX_HTTPS_PORT:-443}:443"  # SSL certificates are ready, enabling HTTPS
     volumes:
       - /var/run/docker.sock:/tmp/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
+      - ./ssl-data/certs:/etc/nginx/certs
+      - ./ssl-data/vhost.d:/etc/nginx/vhost.d
+      - ./ssl-data/html:/usr/share/nginx/html
       # - ./config/nginx.conf:/etc/nginx/nginx.conf:ro  # Temporarily disabled for SSL setup
       - ./static:/app/static:ro
     environment:
@@ -58,8 +58,6 @@ services:
       - VIRTUAL_HOST=
       - LETSENCRYPT_HOST=
       - LETSENCRYPT_EMAIL=
-    env_file:
-      - .env.${FLASK_ENV:-development}
     restart: unless-stopped
     networks:
       - app-network
@@ -73,9 +71,9 @@ services:
       - NGINX_PROXY_CONTAINER=nginx-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - nginx_certs:/etc/nginx/certs
-      - nginx_vhost:/etc/nginx/vhost.d
-      - nginx_html:/usr/share/nginx/html
+      - ./ssl-data/certs:/etc/nginx/certs
+      - ./ssl-data/vhost.d:/etc/nginx/vhost.d
+      - ./ssl-data/html:/usr/share/nginx/html
     depends_on:
       - nginx-proxy
     # In case of SSL error. Only 5 certs alowed within 168 hours!
@@ -83,11 +81,6 @@ services:
     restart: unless-stopped
     networks:
       - app-network
-
-volumes:
-  nginx_certs:
-  nginx_vhost:
-  nginx_html:
 
 networks:
   app-network:
