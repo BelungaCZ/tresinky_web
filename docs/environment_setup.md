@@ -10,6 +10,33 @@ The application supports two environments: development and production. Each envi
 
 ## Environment Configuration
 
+### Environment File Management
+
+Для упрощения разработки и тестирования environment разделен на development и production. Для определения, на каком environment что работает, используется файл `.env`, который является символической ссылкой на `.env.development` или на `.env.production`.
+
+**Структура конфигурационных файлов:**
+```
+.env                    # Символическая ссылка на активное окружение
+.env.development        # Настройки для разработки
+.env.production         # Настройки для продакшена
+```
+
+**Механизм работы:**
+- `.env` - это символическая ссылка, которая указывает на актуальный файл конфигурации
+- В development: `.env` → `.env.development`
+- В production: `.env` → `.env.production`
+
+**Переменные окружения, которые должны различаться:**
+
+Все переменные, которые могут отличаться на development и production должны быть отражены в соответствующих файлах. Например:
+
+- **Конфигурация SSL и дебагинга**: `FLASK_DEBUG`, `USE_HTTPS`
+- **Пути к базам данных**: `DATABASE_URL`
+- **Пароли и секретные ключи**: `SECRET_KEY`
+- **Домены и хосты**: `DOMAIN`, `VIRTUAL_HOST`
+- **SSL сертификаты**: `LETSENCRYPT_HOST`, `LETSENCRYPT_EMAIL`
+- **Настройки безопасности**: различные уровни безопасности для разных окружений
+
 ### Development Environment
 
 The development environment is configured for local development and testing. It includes:
@@ -92,8 +119,23 @@ Use the `scripts/switch_env.sh` script to switch between environments:
 
 The script will:
 1. Stop existing containers
-2. Load the appropriate environment configuration
-3. Start containers with new settings
+2. **Обновить символическую ссылку `.env`** для указания на соответствующий файл конфигурации:
+   - Для development: создать ссылку `.env` → `.env.development`
+   - Для production: создать ссылку `.env` → `.env.production`
+3. Load the appropriate environment configuration
+4. Start containers with new settings
+
+**Проверка текущего окружения:**
+```bash
+# Проверить, на какой файл указывает .env
+ls -la .env
+
+# Результат для development:
+# .env -> .env.development
+
+# Результат для production:
+# .env -> .env.production
+```
 
 ## Nginx Configuration
 
