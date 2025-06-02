@@ -191,17 +191,56 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            // Проверяем Content-Type перед парсингом JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Если ответ не JSON, читаем как текст для отладки
+                return response.text().then(text => {
+                    console.error('Non-JSON response received:', text);
+                    throw new Error('Сервер вернул некорректный ответ. Проверьте логи сервера.');
+                });
+            }
+            
+            // Проверяем статус ответа
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
+                let message = 'Файлы успешно загружены!';
+                if (data.processed !== undefined) {
+                    message = `Успешно обработано файлов: ${data.processed}`;
+                    if (data.failed && data.failed > 0) {
+                        message += `, не удалось обработать: ${data.failed}`;
+                    }
+                }
+                
+                // Показываем сообщение об успехе
+                alert(message);
                 window.location.href = '/admin/gallery';
             } else {
-                alert('Chyba při nahrávání: ' + data.error);
+                alert('Chyba při nahrávání: ' + (data.error || 'Неизвестная ошибка'));
                 progressBar.classList.add('d-none');
             }
         })
         .catch(error => {
-            alert('Chyba při nahrávání: ' + error);
+            console.error('Upload error:', error);
+            
+            // Улучшенное сообщение об ошибке
+            let errorMessage = 'Chyba při nahrávání: ';
+            if (error.message.includes('JSON')) {
+                errorMessage += 'Ошибка обработки ответа сервера. Возможно, произошла серверная ошибка.';
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Ошибка сети. Проверьте соединение с сервером.';
+            } else {
+                errorMessage += error.message || 'Неизвестная ошибка';
+            }
+            
+            alert(errorMessage);
             progressBar.classList.add('d-none');
         });
     });
