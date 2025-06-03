@@ -54,6 +54,7 @@ services:
       - ./ssl-data/certs:/etc/nginx/certs
       - ./ssl-data/vhost.d:/etc/nginx/vhost.d
       - ./ssl-data/html:/usr/share/nginx/html
+      - ./ssl-data/acme:/etc/acme.sh
     depends_on:
       - nginx-proxy
     restart: unless-stopped

@@ -4,6 +4,63 @@
 
 # IMPLEMENTATION PLAN - SSL Setup with Let's Encrypt
 
+## НОВАЯ ЗАДАЧА: Решение проблемы постоянного хранения данных acme.sh Let's Encrypt
+
+### ПРОБЛЕМА
+Контейнер nginx-letsencrypt выдает предупреждение "'/etc/acme.sh' does not appear to be a mounted volume" и теряет данные аккаунта при перезапуске, что приводит к созданию нового аккаунта и превышению rate limits Let's Encrypt.
+
+### ERROR ANALYSIS
+```
+Warning: '/etc/acme.sh' does not appear to be a mounted volume.
+[...] too many certificates (5) already issued for this exact set of domains in the last 168h0m0s
+```
+
+### ТЕХНИЧЕСКОЕ РЕШЕНИЕ
+Добавить bind mount для `/etc/acme.sh` в nginx-letsencrypt сервис: `./ssl-data/acme:/etc/acme.sh`
+
+### ФИНАЛЬНАЯ СТРУКТУРА SSL ДИРЕКТОРИЙ НА PRODUCTION
+```
+./ssl-data/
+├── certs/          # SSL сертификаты и ключи (.crt, .key файлы)
+├── vhost.d/        # Конфигурация виртуальных хостов nginx  
+├── html/           # HTML файлы для ACME HTTP-01 challenge валидации
+└── acme/           # Данные аккаунта acme.sh (account.conf, домен настройки)
+    ├── account.conf                    # Конфигурация ACME аккаунта
+    ├── ca/                            # CA файлы и промежуточные сертификаты
+    └── admin@sad-tresinky-cetechovice.cz/  # Директория конкретного домена
+        └── sad-tresinky-cetechovice.cz/    # Данные для домена
+            ├── ca.cer                      # CA сертификат
+            ├── fullchain.cer              # Полная цепочка сертификатов
+            ├── sad-tresinky-cetechovice.cz.cer  # Основной сертификат
+            ├── sad-tresinky-cetechovice.cz.conf # Конфигурация домена
+            └── sad-tresinky-cetechovice.cz.key  # Приватный ключ
+```
+
+**Права доступа:**
+- Владелец: `root:root`  
+- Директории: `755`
+- Конфигурационные файлы: `644`
+- Приватные ключи: `600`
+
+### IMPLEMENTATION CHECKLIST:
+- [x] ✅ 1. Создать backup docker-compose.yml
+- [x] ✅ 2. Добавить volume mount `./ssl-data/acme:/etc/acme.sh` в nginx-letsencrypt сервис
+- [ ] 3. Коммит изменений в git
+- [ ] 4. **[Production]** Создать директорию ./ssl-data/acme
+- [ ] 5. **[Production]** Установить права доступа: chown -R root:root ssl-data/acme && chmod -R 755 ssl-data/acme
+- [ ] 6. **[Production]** Остановить контейнеры: docker-compose down
+- [ ] 7. **[Production]** Обновить код: git pull  
+- [ ] 8. **[Production]** Запустить: docker-compose up -d
+- [ ] 9. **[Production]** Проверить монтирование: docker exec nginx-letsencrypt ls -la /etc/acme.sh
+- [ ] 10. **[Production]** Мониторить логи: docker-compose logs nginx-letsencrypt (без warning о volume)
+- [ ] 11. **[После снятия rate limit]** Протестировать получение сертификата
+- [ ] 12. **[После снятия rate limit]** Проверить сохранение данных между перезапусками
+
+**Статус:** ПЛАНИРОВАНИЕ ЗАВЕРШЕНО - ГОТОВ К ВЫПОЛНЕНИЮ
+**Цель:** Раз и навсегда решить проблему потери SSL ключей при перезапуске контейнеров
+
+---
+
 ## ТЕКУЩАЯ ЗАДАЧА: Настройка постоянного хранения SSL сертификатов Let's Encrypt
 
 ### ПРОБЛЕМА
