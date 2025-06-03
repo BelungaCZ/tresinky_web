@@ -89,6 +89,10 @@ logs/validation.log
 logs/app.log
 logs/database.log
 
+# Performance testing results
+logs/performance-history.log
+logs/temp-performance.log
+
 # env.bak/
 # venv.bak/
 # .coverage

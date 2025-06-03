@@ -15,7 +15,7 @@
                     Váš prohlížeč nepodporuje video tag.
                 </video>
             {% else %}
-                <img src="{{ url_for('static', filename=image.filename) }}" class="img-fluid mb-3" alt="{{ image.title }}">
+                <img src="{{ url_for('static', filename=image.filename) }}" class="img-fluid mb-3" alt="{{ image.title }}" loading="lazy">
             {% endif %}
         </div>
         <div class="col-md-6">

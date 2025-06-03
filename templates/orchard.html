@@ -9,62 +9,6 @@
         padding: 100px 0;
     }
 
-    .history-card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        padding: 30px;
-        margin-bottom: 30px;
-        position: relative;
-        overflow: hidden;
-        color: white;
-        min-height: 320px;
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .history-card .overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.25);
-        z-index: 1;
-    }
-
-    .history-card .content {
-        position: relative;
-        z-index: 2;
-    }
-
-    .history-card.history {
-        background-image: url("{{ url_for('static', filename='images/history.jpg') }}");
-        background-size: cover;
-        background-position: center;
-    }
-
-    .history-card.present {
-        background-image: url("{{ url_for('static', filename='images/present.jpg') }}");
-        background-size: cover;
-        background-position: center;
-    }
-
-    .history-card.care {
-        background-image: url("{{ url_for('static', filename='images/care.jpg') }}");
-        background-size: cover;
-        background-position: center;
-    }
-
-    .history-card.community {
-        background-image: url("{{ url_for('static', filename='images/community.jpg') }}");
-        background-size: cover;
-        background-position: center;
-    }
-
-    .history-card h2, .history-card p, .history-card blockquote {
-        color: white;
-        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    }
-
     .varieties-list {
         list-style-type: none;
         padding-left: 0;
@@ -95,7 +39,14 @@
         <div class="row g-4 flex-column">
             <div class="col-12 mb-4" data-aos="fade-up">
                 <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
-                    <img src="{{ url_for('static', filename='images/history.webp') }}" class="w-100 object-fit-cover" alt="Historie sadu" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <img src="{{ url_for('static', filename='images/history.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/history.webp') }} 400w,
+                                 {{ url_for('static', filename='images/history.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         class="w-100 object-fit-cover" 
+                         alt="Historie sadu" 
+                         loading="lazy" 
+                         style="min-height:300px; max-height:400px;">
                     <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
                     <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
                         <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Historie sadu</h4>
@@ -108,7 +59,14 @@
             </div>
             <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="100">
                 <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
-                    <img src="{{ url_for('static', filename='images/present.webp') }}" class="w-100 object-fit-cover" alt="Současnost" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <img src="{{ url_for('static', filename='images/present.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/present.webp') }} 400w,
+                                 {{ url_for('static', filename='images/present.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         class="w-100 object-fit-cover" 
+                         alt="Současnost" 
+                         loading="lazy" 
+                         style="min-height:300px; max-height:400px;">
                     <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
                     <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
                         <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Současnost</h4>
@@ -118,7 +76,14 @@
             </div>
             <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
-                    <img src="{{ url_for('static', filename='images/care.webp') }}" class="w-100 object-fit-cover" alt="Péče o sad" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <img src="{{ url_for('static', filename='images/care.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/care.webp') }} 400w,
+                                 {{ url_for('static', filename='images/care.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         class="w-100 object-fit-cover" 
+                         alt="Péče o sad" 
+                         loading="lazy" 
+                         style="min-height:300px; max-height:400px;">
                     <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
                     <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
                         <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Péče o sad</h4>
@@ -128,7 +93,14 @@
             </div>
             <div class="col-12 mb-4" data-aos="fade-up" data-aos-delay="300">
                 <div class="photo-card position-relative overflow-hidden shadow-sm h-100 mx-auto" style="max-width: 800px;">
-                    <img src="{{ url_for('static', filename='images/community.webp') }}" class="w-100 object-fit-cover" alt="Přínos pro komunitu" loading="lazy" style="min-height:300px; max-height:400px;">
+                    <img src="{{ url_for('static', filename='images/community.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/community.webp') }} 400w,
+                                 {{ url_for('static', filename='images/community.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         class="w-100 object-fit-cover" 
+                         alt="Přínos pro komunitu" 
+                         loading="lazy" 
+                         style="min-height:300px; max-height:400px;">
                     <div class="photo-card-overlay position-absolute top-0 start-0 w-100 h-100" style="background:rgba(0,0,0,0.32);"></div>
                     <div class="photo-card-content position-absolute bottom-0 start-0 w-100 p-4 text-white" style="z-index:2; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);">
                         <h4 class="fw-bold mb-2" style="font-size: 1.5rem;">Přínos pro komunitu</h4>
