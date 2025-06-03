@@ -78,7 +78,12 @@
         <div class="row">
             <div class="col-lg-10 mx-auto">
                 <div class="image-text-block" data-aos="fade-right">
-                    <img src="{{ url_for('static', filename='images/vybor.webp') }}" alt="Výbor spolku" loading="lazy">
+                    <img src="{{ url_for('static', filename='images/vybor.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/vybor.webp') }} 400w,
+                                 {{ url_for('static', filename='images/vybor.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Výbor spolku" 
+                         loading="lazy">
                     <div class="text">
                         <h2 class="fw-bold mb-3">Výbor spolku</h2>
                         <ul class="list-unstyled mb-0">
@@ -97,7 +102,12 @@
         <div class="row">
             <div class="col-lg-10 mx-auto">
                 <div class="image-text-block" data-aos="fade-left">
-                    <img src="{{ url_for('static', filename='images/komise.webp') }}" alt="Revizní komise" loading="lazy">
+                    <img src="{{ url_for('static', filename='images/komise.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/komise.webp') }} 400w,
+                                 {{ url_for('static', filename='images/komise.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Revizní komise" 
+                         loading="lazy">
                     <div class="text">
                         <h2 class="fw-bold mb-3">Revizní komise</h2>
                         <ul class="list-unstyled mb-0">
@@ -114,7 +124,12 @@
         <div class="row">
             <div class="col-lg-10 mx-auto">
                 <div class="image-text-block" data-aos="fade-right">
-                    <img src="{{ url_for('static', filename='images/care.webp') }}" alt="Spolupracovník výboru pro péči o les" loading="lazy">
+                    <img src="{{ url_for('static', filename='images/care.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/care.webp') }} 400w,
+                                 {{ url_for('static', filename='images/care.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Spolupracovník výboru pro péči o les" 
+                         loading="lazy">
                     <div class="text">
                         <h2 class="fw-bold mb-3">Spolupracovníci výboru pro péči o les</h2>
                         <ul class="list-unstyled mb-0">
@@ -130,7 +145,12 @@
         <div class="row">
             <div class="col-lg-10 mx-auto">
                 <div class="image-text-block" data-aos="fade-up">
-                    <img src="{{ url_for('static', filename='images/cinnosti.webp') }}" alt="Naše činnost" loading="lazy">
+                    <img src="{{ url_for('static', filename='images/cinnosti.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/cinnosti.webp') }} 400w,
+                                 {{ url_for('static', filename='images/cinnosti.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Naše činnost" 
+                         loading="lazy">
                     <div class="text">
                         <h2 class="fw-bold mb-3">Naše činnosti</h2>
                         <p>

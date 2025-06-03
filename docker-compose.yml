@@ -21,24 +21,6 @@ services:
     networks:
       - app-network
 
-  # Simple HTTP-only nginx (temporary solution - DISABLED for SSL)
-  # Use this instead of nginx-proxy to avoid SSL certificate issues
-#  nginx:
-#    image: nginx:alpine
-#    container_name: nginx-server
-#    ports:
-#      - "80:80"
-#    volumes:
-#      - ./config/nginx-http-only.conf:/etc/nginx/nginx.conf:ro
-#      - ./static:/app/static:ro
-#    depends_on:
-#      - web
-#    restart: unless-stopped
-#    networks:
-#      - app-network
-
-  # nginx-proxy service (SSL enabled)
-  # Uncommented for SSL support with Let's Encrypt
   nginx-proxy:
     image: nginxproxy/nginx-proxy:alpine
     container_name: nginx-proxy
@@ -53,7 +35,6 @@ services:
       # - ./config/nginx.conf:/etc/nginx/nginx.conf:ro  # Temporarily disabled for SSL setup
       - ./static:/app/static:ro
     environment:
-      # Переопределяем опасные переменные пустыми значениями
       # nginx-proxy будет читать VIRTUAL_HOST и LETSENCRYPT_HOST из web сервиса через Docker API
       - VIRTUAL_HOST=
       - LETSENCRYPT_HOST=
@@ -62,7 +43,6 @@ services:
     networks:
       - app-network
 
-  # Let's Encrypt companion (SSL certificates enabled)
   # Enabled for automatic SSL certificate management
   nginx-letsencrypt:
     image: nginxproxy/acme-companion
@@ -76,8 +56,6 @@ services:
       - ./ssl-data/html:/usr/share/nginx/html
     depends_on:
       - nginx-proxy
-    # In case of SSL error. Only 5 certs alowed within 168 hours!
-    # restart: unless-stopped
     restart: unless-stopped
     networks:
       - app-network

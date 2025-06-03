@@ -24,11 +24,34 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 
 ### 💻 Development  
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Детальный план реализации исправлений и улучшений
+- **[Optimization Plan](OPTIMIZATION_PLAN.md)** - Комплексный план оптимизации производительности
 - **[Changelog](CHANGELOG.md)** - История изменений и обновлений проекта
+- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных
+
+### 📊 Performance & Testing
+- **[Performance Metrics](PERFORMANCE_METRICS.md)** - Система мониторинга метрик производительности
+- **[Mobile Testing Guide](MOBILE_TESTING_GUIDE.md)** - Руководство по тестированию оптимизаций на мобильных устройствах
 
 ### 📋 Maintenance
 - **[Changelog](CHANGELOG.md)** - Отслеживание версий и изменений
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация по исправлениям
+
+### 📁 Documentation Structure
+```
+docs/
+├── README.md (основная документация + Performance Testing)
+├── CHANGELOG.md (история изменений + новая документация)
+├── IMPLEMENTATION_PLAN.md (план реализации + Performance Requirements)
+├── PERFORMANCE_METRICS.md (система метрик + инструкции по измерению)
+├── MOBILE_TESTING_GUIDE.md (тестирование + требования)
+├── OPTIMIZATION_PLAN.md (план оптимизации)
+├── docs/
+│   ├── database.md
+│   ├── deployment_guide.md  
+│   └── environment_setup.md
+└── scripts/
+    └── performance-check.sh (автоматизация тестирования)
+```
 
 ## Technical Details
 
@@ -37,6 +60,22 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 - HTTP/2
 - Casching
 - Small size
+
+### Database
+- **Type**: SQLite database
+- **Location**: `instance/tresinky.db` (automatically created by Flask)
+- **ORM**: Flask-SQLAlchemy
+- **Size**: ~32KB with current data
+- **Tables**:
+  - `contact_message` - Contact form submissions (name, email, message, date)
+  - `gallery_image` - Image metadata (filename, title, description, dates, category, display_order)
+- **Features**:
+  - Automatic database initialization
+  - Image metadata management
+  - Contact form message storage
+  - Database-filesystem synchronization
+  - Comprehensive logging of all database operations
+- **Development & Production**: Same SQLite configuration for both environments
 
 ### Image Processing
 - Images are automatically resized and converted to WebP format
@@ -87,9 +126,11 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
    ```
 
 ### Configuration
-- Configure database in `app.py`
-- Set up static file paths
-- Configure upload limits if needed
+- **Database**: SQLite automatically initialized in `instance/tresinky.db`
+- **Environment**: Set via `.env` files (development/production)
+- **Static files**: Configured for gallery, uploads, and cache directories
+- **Upload limits**: 400MB max file size configured
+- **Logging**: Comprehensive logging system in `logs/` directory
 
 ## Usage
 
@@ -123,6 +164,13 @@ static/
   ├── css/
   ├── js/
   └── uploads/        # Temporary upload directory
+instance/
+  └── tresinky.db     # SQLite database file
+logs/
+  ├── database.log    # Database operations log
+  ├── upload.log      # File upload operations log
+  ├── processing.log  # Image processing log
+  └── errors.log      # Error log
 ```
 
 ## Development
@@ -165,7 +213,54 @@ static/
 
 - **[Environment Setup](docs/environment_setup.md)** - Детальная настройка окружения для разработки и продакшена
 - **[Deployment Guide](docs/deployment_guide.md)** - Пошаговое руководство по деплою
+- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных и структуре таблиц
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация и план исправлений
 - **[Changelog](CHANGELOG.md)** - История версий и обновлений проекта
+
+## Performance Testing & Monitoring
+
+### Измерение производительности сайта
+
+**ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ:** После каждого изменения кода, влияющего на производительность, необходимо измерить метрики производительности и документировать результаты.
+
+#### Инструменты для измерения:
+
+1. **Chrome DevTools Lighthouse**
+   ```bash
+   # В Chrome DevTools:
+   # F12 → Lighthouse → Performance → Mobile → Generate Report
+   ```
+
+2. **PageSpeed Insights API**
+   ```bash
+   # Команда для быстрой проверки
+   curl "https://www.googleapis.com/pagespeed/v5/runPagespeed?url=https://your-site.com&category=performance&strategy=mobile"
+   ```
+
+3. **Web Vitals Monitoring (встроенный)**
+   ```javascript
+   // В консоли браузера
+   WebVitals.getMetrics();
+   ```
+
+#### Ключевые метрики для отслеживания:
+
+- **Performance Score:** > 90 (mobile), > 95 (desktop)
+- **LCP (Largest Contentful Paint):** < 2.5s
+- **FID (First Input Delay):** < 100ms  
+- **CLS (Cumulative Layout Shift):** < 0.1
+
+#### Workflow после изменений:
+
+1. **Сделать изменения в коде**
+2. **Запустить локальное тестирование:**
+   - Chrome DevTools → Performance
+   - Network tab для анализа загрузки ресурсов
+3. **Измерить Lighthouse scores** (до и после)
+4. **Проверить Web Vitals** в консоли браузера
+5. **Документировать результаты** в [Performance Metrics](PERFORMANCE_METRICS.md)
+6. **При деплое на production** - повторить измерения через PageSpeed Insights
+
+Подробные инструкции см. в [Mobile Testing Guide](MOBILE_TESTING_GUIDE.md).
 
 

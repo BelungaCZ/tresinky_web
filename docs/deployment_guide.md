@@ -31,7 +31,12 @@
 
 3. Configure environment variables:
    - Update `.env.development` for local development
-   - Update `.env.production` for production deployment
+   - Update `.env.production` for production deployment: 
+   ```bash
+   FLASK_ENV=production
+   DEBUG=false
+   ```
+
 
 ## Development Deployment
 
@@ -67,12 +72,19 @@
    ./scripts/switch_env.sh production
    ```
 
-3. Start the services:
+3. Setup secret key:
+   ```bash
+   ./scripts/update_secret_key.sh production
+   ```
+
+4. Start the services:
    ```bash
    docker compose up -d
    ```
 
-4. Verify the deployment:
+5. Verify the deployment:
+   - Check response: `curl -I http://sad-tresinky-cetechovice.cz`
+   - Check response: `curl -I https://sad-tresinky-cetechovice.cz`
    - Check application logs: `docker compose logs web`
    - Check Nginx logs: `docker compose logs nginx`
    - Test HTTPS: https://sad-tresinky-cetechovice.cz

@@ -81,6 +81,105 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
+    // Функция для определения стратегии загрузки
+    function shouldUseSequentialUpload(files) {
+        // Если больше 1 поддерживаемого файла - используем поштучную загрузку
+        let supportedCount = 0;
+        for (let i = 0; i < files.length; i++) {
+            if (isFileSupported(files[i])) {
+                supportedCount++;
+            }
+        }
+        return supportedCount > 1;
+    }
+
+    // Функция поштучной загрузки файлов
+    async function uploadFilesSequentially(files, formDataTemplate, progressBarInner, ws) {
+        const supportedFiles = [];
+        
+        // Собираем поддерживаемые файлы
+        for (let i = 0; i < files.length; i++) {
+            if (isFileSupported(files[i])) {
+                supportedFiles.push(files[i]);
+            }
+        }
+        
+        let processedFiles = 0;
+        let failedFiles = [];
+        
+        for (let i = 0; i < supportedFiles.length; i++) {
+            const file = supportedFiles[i];
+            
+            try {
+                // Создаем FormData для одного файла
+                const singleFileFormData = new FormData();
+                
+                // Копируем все поля кроме файла
+                for (let [key, value] of formDataTemplate.entries()) {
+                    if (key !== 'image') {
+                        singleFileFormData.append(key, value);
+                    }
+                }
+                
+                // Добавляем один файл
+                singleFileFormData.append('image', file);
+                
+                // Обновляем прогресс перед загрузкой
+                const progressPercent = Math.round((i / supportedFiles.length) * 100);
+                progressBarInner.style.width = `${progressPercent}%`;
+                progressBarInner.textContent = `${i + 1}/${supportedFiles.length}: ${file.name}`;
+                
+                // Отправляем файл
+                const response = await fetch('/admin/upload', {
+                    method: 'POST',
+                    body: singleFileFormData
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response received:', text);
+                    throw new Error('Сервер вернул некорректный ответ');
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    processedFiles++;
+                    console.log(`Successfully uploaded: ${file.name}`);
+                } else {
+                    failedFiles.push({name: file.name, error: data.error});
+                    console.error(`Failed to upload ${file.name}: ${data.error}`);
+                }
+                
+            } catch (error) {
+                failedFiles.push({name: file.name, error: error.message});
+                console.error(`Error uploading ${file.name}:`, error);
+            }
+            
+            // Небольшая пауза между загрузками
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        // Финальный прогресс
+        progressBarInner.style.width = '100%';
+        progressBarInner.textContent = 'Завершено';
+        
+        // Небольшая пауза чтобы пользователь увидел завершение прогресс-бара
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        return {
+            processed: processedFiles,
+            failed: failedFiles.length,
+            failedDetails: failedFiles,
+            total: supportedFiles.length
+        };
+    }
+
     // Auto-fill album name and title based on selected directory
     document.getElementById('fileInputButton').addEventListener('click', function() {
         document.getElementById('image').click();
@@ -145,104 +244,130 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const formData = new FormData(form);
         const files = document.getElementById('image').files;
         
-        // Clear any existing files in formData
-        formData.delete('image');
-        
-        // Add only supported files to formData
-        let fileCount = 0;
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (isFileSupported(file)) {
-                formData.append('image', file);
-                fileCount++;
-            }
-        }
-        
-        // If no valid files were found, show error
-        if (fileCount === 0) {
-            alert('Nebyly nalezeny žádné podporované soubory k nahrání.');
+        // Проверяем наличие файлов
+        if (files.length === 0) {
+            alert('Выберите файлы для загрузки.');
             return;
         }
         
-        // Show progress bar
+        // Создаем базовый FormData с метаданными
+        const baseFormData = new FormData();
+        baseFormData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+        baseFormData.append('album', document.getElementById('album').value);
+        baseFormData.append('new_album', document.getElementById('new_album').value);
+        baseFormData.append('title', document.getElementById('title').value);
+        baseFormData.append('description', document.getElementById('description').value);
+        
+        // Показываем прогресс-бар
         progressBar.classList.remove('d-none');
         progressBarInner.style.width = '0%';
         
-        // Create WebSocket connection for progress updates
+        // Создаем WebSocket соединение
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/upload`);
         
         ws.onmessage = function(event) {
             const data = JSON.parse(event.data);
             if (data.type === 'progress') {
-                progressBarInner.style.width = `${data.progress}%`;
-                progressBarInner.textContent = `${data.progress}%`;
+                console.log('WebSocket progress update:', data);
             }
         };
         
         ws.onclose = function() {
-            progressBar.classList.add('d-none');
+            console.log('WebSocket connection closed');
         };
         
-        fetch('/admin/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            // Проверяем Content-Type перед парсингом JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                // Если ответ не JSON, читаем как текст для отладки
-                return response.text().then(text => {
-                    console.error('Non-JSON response received:', text);
-                    throw new Error('Сервер вернул некорректный ответ. Проверьте логи сервера.');
-                });
-            }
+        // Определяем стратегию загрузки
+        if (shouldUseSequentialUpload(files)) {
+            // Поштучная загрузка
+            console.log('Using sequential upload for', files.length, 'files');
             
-            // Проверяем статус ответа
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                let message = 'Файлы успешно загружены!';
-                if (data.processed !== undefined) {
-                    message = `Успешно обработано файлов: ${data.processed}`;
-                    if (data.failed && data.failed > 0) {
-                        message += `, не удалось обработать: ${data.failed}`;
+            uploadFilesSequentially(files, baseFormData, progressBarInner, ws)
+            .then(result => {
+                progressBar.classList.add('d-none');
+                ws.close();
+                
+                if (result.failed === 0) {
+                    alert(`Все файлы успешно загружены! Обработано: ${result.processed}`);
+                    window.location.href = '/admin/gallery';
+                } else {
+                    let message = `Загрузка завершена. Успешно: ${result.processed}, неудачно: ${result.failed}`;
+                    if (result.failedDetails.length > 0) {
+                        message += '\n\nОшибки:\n';
+                        result.failedDetails.slice(0, 3).forEach(fail => {
+                            message += `- ${fail.name}: ${fail.error}\n`;
+                        });
+                        if (result.failedDetails.length > 3) {
+                            message += `... и еще ${result.failedDetails.length - 3} ошибок`;
+                        }
                     }
+                    alert(message);
+                    window.location.href = '/admin/gallery';
+                }
+            })
+            .catch(error => {
+                console.error('Sequential upload error:', error);
+                progressBar.classList.add('d-none');
+                ws.close();
+                alert('Критическая ошибка загрузки: ' + error.message);
+            });
+            
+        } else {
+            // Обычная загрузка одного файла
+            console.log('Using single file upload');
+            
+            // Добавляем единственный файл
+            const file = Array.from(files).find(f => isFileSupported(f));
+            if (!file) {
+                alert('Не найдены поддерживаемые файлы.');
+                progressBar.classList.add('d-none');
+                return;
+            }
+            
+            baseFormData.append('image', file);
+            
+            fetch('/admin/upload', {
+                method: 'POST',
+                body: baseFormData
+            })
+            .then(response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        console.error('Non-JSON response received:', text);
+                        throw new Error('Сервер вернул некорректный ответ');
+                    });
                 }
                 
-                // Показываем сообщение об успехе
-                alert(message);
-                window.location.href = '/admin/gallery';
-            } else {
-                alert('Chyba při nahrávání: ' + (data.error || 'Неизвестная ошибка'));
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
+            .then(data => {
                 progressBar.classList.add('d-none');
-            }
-        })
-        .catch(error => {
-            console.error('Upload error:', error);
-            
-            // Улучшенное сообщение об ошибке
-            let errorMessage = 'Chyba při nahrávání: ';
-            if (error.message.includes('JSON')) {
-                errorMessage += 'Ошибка обработки ответа сервера. Возможно, произошла серверная ошибка.';
-            } else if (error.message.includes('Failed to fetch')) {
-                errorMessage += 'Ошибка сети. Проверьте соединение с сервером.';
-            } else {
-                errorMessage += error.message || 'Неизвестная ошибка';
-            }
-            
-            alert(errorMessage);
-            progressBar.classList.add('d-none');
-        });
+                ws.close();
+                
+                if (data.success) {
+                    // Небольшая пауза для консистентности с поштучной загрузкой
+                    setTimeout(() => {
+                        alert('Файл успешно загружен!');
+                        window.location.href = '/admin/gallery';
+                    }, 100);
+                } else {
+                    alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Single file upload error:', error);
+                progressBar.classList.add('d-none');
+                ws.close();
+                alert('Ошибка загрузки: ' + error.message);
+            });
+        }
     });
 });
 </script>

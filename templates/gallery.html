@@ -509,7 +509,8 @@
                 <div class="folder-cover">
                     <img src="{{ url_for('static', filename=folder.cover_image) }}" 
                          alt="{{ folder.name }}" 
-                         class="img-fluid">
+                         class="img-fluid"
+                         loading="lazy">
                     <div class="folder-name">
                         <h3>{{ folder.name }}</h3>
                     </div>
@@ -531,7 +532,8 @@
                                 <div class="gallery-thumb" data-index="{{ loop.index0 }}">
                                     <img src="{{ url_for('static', filename=image) }}" 
                                          alt="{{ folder.name }} - {{ loop.index }}" 
-                                         class="img-fluid">
+                                         class="img-fluid"
+                                         loading="lazy">
                                 </div>
                             </div>
                             {% endfor %}

@@ -1,5 +1,5 @@
 /* General Styles */
-body, h1, h2, h3, h4, h5, h6, .gallery-main-title, .gallery-subtitle, .lead, .card-title, .card-text, .btn, .navbar, .form-control, .modal, .section, .image-text-block, .history-card, .folder-name, a, p, ul, ol, li {
+body, h1, h2, h3, h4, h5, h6, .gallery-main-title, .gallery-subtitle, .lead, .card-title, .card-text, .btn, .navbar, .form-control, .modal, .section, .image-text-block, .folder-name, a, p, ul, ol, li {
     font-family: 'Inter', sans-serif !important;
 }
 
@@ -61,51 +61,6 @@ body {
 
 .section-title {
     margin-bottom: 3rem;
-}
-
-/* History Cards with Backgrounds */
-.history-card {
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    padding: 30px;
-    margin-bottom: 30px;
-    color: white;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    position: relative;
-}
-
-/* Optional: Add a dark overlay to improve readability */
-.history-card::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 8px;
-    z-index: 1;
-}
-
-.history-card > * {
-    position: relative;
-    z-index: 2;
-}
-
-/* Specific backgrounds */
-.history-card.history {
-    background-image: url("/static/images/history.webp");
-}
-
-.history-card.present {
-    background-image: url("/static/images/present.webp");
-}
-
-.history-card.care {
-    background-image: url("/static/images/care.webp");
-}
-
-.history-card.community {
-    background-image: url("/static/images/community.webp");
 }
 
 /* Card Styles */
