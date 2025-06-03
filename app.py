@@ -128,18 +128,18 @@ class GalleryImage(db.Model):
     description = db.Column(db.Text)
     date = db.Column(db.DateTime, nullable=False)
     original_date = db.Column(db.DateTime)
-    category = db.Column(db.String(100))  # New field for categories like "květen 2019"
+    # category = db.Column(db.String(100))  # Temporarily commented out for production compatibility
     display_order = db.Column(db.Integer, default=0)  # For controlling image order within categories
 
     def __init__(self, filename: str, title: str | None = None, description: str | None = None,
                  date: datetime | None = None, original_date: datetime | None = None,
-                 category: str | None = None, display_order: int = 0):
+                 display_order: int = 0):
         self.filename = filename
         self.title = title
         self.description = description
         self.date = date or datetime.now()
         self.original_date = original_date or self.date
-        self.category = category
+        # self.category = category  # Temporarily commented out
         self.display_order = display_order
 
     def __repr__(self):
@@ -217,8 +217,8 @@ class ImageEditForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(ImageEditForm, self).__init__(*args, **kwargs)
         self.album.choices = [(album, album) for album in get_existing_albums()]
-        if 'obj' in kwargs and kwargs['obj']:
-            self.album.data = kwargs['obj'].category
+        # if 'obj' in kwargs and kwargs['obj']:
+        #     self.album.data = kwargs['obj'].category  # Temporarily commented out
 
 def get_image_date(image_path):
     """
@@ -516,7 +516,7 @@ def upload_image():
                                     description=form.description.data,
                                     date=image_date,
                                     original_date=image_date,
-                                    category=album_name
+                                    # category=album_name  # Temporarily commented out
                                 )
                                 
                                 db.session.add(gallery_image)
@@ -543,7 +543,7 @@ def upload_image():
                                     description=form.description.data,
                                     date=datetime.now(),
                                     original_date=datetime.now(),
-                                    category=album_name
+                                    # category=album_name  # Temporarily commented out
                                 )
                                 
                                 db.session.add(gallery_image)
@@ -672,18 +672,17 @@ def edit_image(id):
     form = ImageEditForm(obj=image)
     
     if form.validate_on_submit():
-        # Get old and new album paths
-        old_album = image.category
+        # Get current album from filename
+        current_album = os.path.dirname(image.filename).split('/')[-1] if '/' in image.filename else ''
         new_album = form.album.data
         
-        # Update image details
+        # Update image properties
         image.title = form.title.data
         image.description = form.description.data
-        image.category = new_album
         image.display_order = form.display_order.data
         
         # If album changed, move the file
-        if old_album != new_album:
+        if current_album != new_album and new_album:
             old_path = os.path.join('static', image.filename)
             new_dir = os.path.join('static', 'images', 'gallery', new_album)
             new_filename = os.path.join('images', 'gallery', new_album, os.path.basename(image.filename))
@@ -700,11 +699,11 @@ def edit_image(id):
                 # Check if old album is now empty
                 remaining_images = db.session.query(GalleryImage).filter(
                     text("filename LIKE :pattern")
-                ).params(pattern=f'%{old_album}%').count()
+                ).params(pattern=f'%{current_album}%').count()
                 
                 # Remove old album directory if empty
-                old_album_dir = os.path.join('static', 'images', 'gallery', old_album)
-                if remaining_images == 0 and os.path.exists(old_album_dir):
+                old_album_dir = os.path.join('static', 'images', 'gallery', current_album)
+                if remaining_images == 1 and os.path.exists(old_album_dir):  # 1 because current image still matches
                     try:
                         os.rmdir(old_album_dir)
                     except OSError:
