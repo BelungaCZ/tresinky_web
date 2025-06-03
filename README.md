@@ -25,6 +25,7 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 ### 💻 Development  
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Детальный план реализации исправлений и улучшений
 - **[Changelog](CHANGELOG.md)** - История изменений и обновлений проекта
+- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных
 
 ### 📋 Maintenance
 - **[Changelog](CHANGELOG.md)** - Отслеживание версий и изменений
@@ -37,6 +38,22 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 - HTTP/2
 - Casching
 - Small size
+
+### Database
+- **Type**: SQLite database
+- **Location**: `instance/tresinky.db` (automatically created by Flask)
+- **ORM**: Flask-SQLAlchemy
+- **Size**: ~32KB with current data
+- **Tables**:
+  - `contact_message` - Contact form submissions (name, email, message, date)
+  - `gallery_image` - Image metadata (filename, title, description, dates, category, display_order)
+- **Features**:
+  - Automatic database initialization
+  - Image metadata management
+  - Contact form message storage
+  - Database-filesystem synchronization
+  - Comprehensive logging of all database operations
+- **Development & Production**: Same SQLite configuration for both environments
 
 ### Image Processing
 - Images are automatically resized and converted to WebP format
@@ -87,9 +104,11 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
    ```
 
 ### Configuration
-- Configure database in `app.py`
-- Set up static file paths
-- Configure upload limits if needed
+- **Database**: SQLite automatically initialized in `instance/tresinky.db`
+- **Environment**: Set via `.env` files (development/production)
+- **Static files**: Configured for gallery, uploads, and cache directories
+- **Upload limits**: 400MB max file size configured
+- **Logging**: Comprehensive logging system in `logs/` directory
 
 ## Usage
 
@@ -123,6 +142,13 @@ static/
   ├── css/
   ├── js/
   └── uploads/        # Temporary upload directory
+instance/
+  └── tresinky.db     # SQLite database file
+logs/
+  ├── database.log    # Database operations log
+  ├── upload.log      # File upload operations log
+  ├── processing.log  # Image processing log
+  └── errors.log      # Error log
 ```
 
 ## Development
@@ -165,6 +191,7 @@ static/
 
 - **[Environment Setup](docs/environment_setup.md)** - Детальная настройка окружения для разработки и продакшена
 - **[Deployment Guide](docs/deployment_guide.md)** - Пошаговое руководство по деплою
+- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных и структуре таблиц
 - **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация и план исправлений
 - **[Changelog](CHANGELOG.md)** - История версий и обновлений проекта
 
