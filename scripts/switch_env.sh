@@ -33,12 +33,5 @@ docker compose down
 # Start containers with new environment
 docker compose up -d
 
-echo "Switched to $ENV environment"
-
+echo "✅ Switched to $ENV environment"
 echo "Environment variables are now loaded from .env.$ENV"
-
-# If switching to production, remind about SSL
-if [ "$ENV" = "production" ]; then
-    echo ""
-    echo "SSL certificates are managed by Let's Encrypt for the production environment."
-fi 
