@@ -29,7 +29,7 @@ def add_images_to_db():
                         description=None,
                         date=image_date,
                         original_date=image_date,
-                        # category=None,  # Temporarily commented out for DB compatibility
+                        category=None,
                         display_order=0
                     )
                     db.session.add(image)
