@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Les{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+
+    .forest-inter-font h1,
+    .forest-inter-font .lead {
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    .image-text-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    .image-text-block img {
+        width: 100%;
+        max-width: 400px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+
+    .image-text-block .text {
+        flex: 1;
+        min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+        .image-text-block {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .image-text-block img {
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section forest-inter-font">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">Péče o les</h1>
+                <p class="lead">Spolek v souladu s lesním plánem hospodaření pečuje o 12 ha lesa</p>
+            </div>
+        </div>
+
+        <!-- Основная информация о лесе -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto" data-aos="fade-up">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Lesní hospodářství</h2>
+                        <p class="card-text">
+                            Spolek v souladu s lesním plánem hospodaření pečuje o 12 ha lesa. Původně vysazená smrková monokultura je postupně nahrazována výsadbou buku a dalších druhů stromů lépe odolávajících klimatické změně. Výsadby jsou pravidelně vyžínány. Mladým výsadbám se velmi dobře daří.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фото леса с информацией -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="image-text-block" data-aos="fade-right">
+                    <img src="{{ url_for('static', filename='images/forest.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/forest.webp') }} 400w,
+                                 {{ url_for('static', filename='images/forest.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Les Třešinky" 
+                         loading="lazy">
+                    <div class="text">
+                        <h2 class="fw-bold mb-3">Klimatická změna a les</h2>
+                        <p>
+                            Vzhledem ke klimatické změně a suchu, které postihuje naši krajinu, je nutné přistupovat k lesnímu hospodářství s ohledem na budoucí vývoj. Proto se zaměřujeme na výsadbu druhů stromů, které jsou odolnější vůči suchu a teplu.
+                        </p>
+                        <p>
+                            Buk lesní, dub letní a zimní, lípa srdčitá a další listnaté dřeviny jsou základem našeho nového lesa. Tyto druhy lépe odolávají klimatickým změnám a poskytují lepší úkryt pro lesní zvěř.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительная информация -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="image-text-block" data-aos="fade-left">
+                    <div class="text">
+                        <h2 class="fw-bold mb-3">Spolupráce s odborníky</h2>
+                        <p>
+                            Na péči o les se podílí nejen výbor a kontrolní komise spolku, ale také aktivně se zapojila řada dalších spoluvlastníků a přátel sadu a lesa spravovaného spolkem. Spolupracujeme s lesními hospodáři a odborníky na lesní ekologii.
+                        </p>
+                        <p>
+                            Setkání jsou vždy příjemná a odměnou je postupně se měnící tvář dříve zanedbaného území katastru Cetechovic. Les se stává příjemným místem k procházkám a setkávání místních obyvatel.
+                        </p>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/forest-care.webp') }}" 
+                         srcset="{{ url_for('static', filename='images/thumbnails/forest-care.webp') }} 400w,
+                                 {{ url_for('static', filename='images/forest-care.webp') }} 800w"
+                         sizes="(max-width: 768px) 400px, 800px"
+                         alt="Péče o les" 
+                         loading="lazy">
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+</script>
+{% endblock %} 

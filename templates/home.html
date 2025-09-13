@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Domů{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .hero-section {
+        height: 100vh;
+        background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+                    url("{{ url_for('static', filename='images/home-main.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        align-items: center;
+        color: white;
+    }
+    
+    .hero-content {
+        margin-bottom: 50px;
+    }
+    
+    .hero-image {
+        width: 100%;
+        max-height: 500px;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .section {
+        padding: 100px 0;
+    }
+    
+    .feature-card {
+        transition: transform 0.3s;
+        height: 100%;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8" data-aos="fade-right">
+                <h1 class="display-1 fw-bold">Třešinky Cetechovice</h1>
+                <p class="lead">Obnovujeme historický sad a pečujeme o krajinu</p>
+                <a href="{{ url_for('about') }}" class="btn btn-light btn-lg">Více o nás</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h2 class="display-4">Co děláme</h2>
+                <p class="lead">Naše aktivity a projekty</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <i class="bi bi-tree-fill display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">Obnova sadu</h3>
+                        <p class="card-text">Vysazujeme a pečujeme o staré krajové odrůdy ovocných stromů.</p>
+                        <a href="{{ url_for('orchard') }}" class="btn btn-outline-primary">Více informací</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <i class="bi bi-tree display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">Péče o les</h3>
+                        <p class="card-text">Spolek v souladu s lesním plánem hospodaření pečuje o 12 ha lesa.</p>
+                        <a href="{{ url_for('forest') }}" class="btn btn-outline-primary">Více informací</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <i class="bi bi-images display-4 text-primary mb-3"></i>
+                        <h3 class="card-title">Galerie</h3>
+                        <p class="card-text">Prohlédněte si fotografie z našeho sadu a aktivit.</p>
+                        <a href="{{ url_for('gallery') }}" class="btn btn-outline-primary">Prohlédnout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section bg-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12" data-aos="fade-right">
+                <h2 class="display-4">Péče o les</h2>
+                <p class="lead">Spolek v souladu s lesním plánem hospodaření pečuje o 12 ha lesa. Původně vysazená smrková monokultura je postupně nahrazována výsadbou buku a dalších druhů stromů lépe odolávajících klimatické změně. Výsadby jsou pravidelně vyžínány. Mladým výsadbám se velmi dobře daří.</p>
+                <a href="{{ url_for('forest') }}" class="btn btn-primary btn-lg">Číst více</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="row">
+            <div class="col-12" data-aos="fade-right">
+                <h2 class="display-4">O nás</h2>
+                <p class="lead">Spolek singulárních podílníků Třešinky Cetechovice byl po vzoru našich předků znovu založen 28. května 2017 na ustavující schůzi v Cetechovicích.</p>
+                <p>Na obnově sadu se nepodílí jen výbor a kontrolní komise spolku, jež se pravidelně scházejí. Aktivně se zapojila řada dalších spoluvlastníků a přátel sadu a lesa spravovaného spolkem.</p>
+                <a href="{{ url_for('about') }}" class="btn btn-primary btn-lg">Číst více</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+</script>
+{% endblock %} 
