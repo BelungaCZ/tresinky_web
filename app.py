@@ -488,13 +488,6 @@ def forest():
 
 @app.route('/gallery')
 def gallery():
-    # Synchronize database with file system
-    try:
-        sync_gallery_with_disk()
-    except Exception as e:
-        # Log error but don't interrupt gallery display
-        app_logger.warning(f"Failed to sync database with filesystem: {e}")
-    
     # Clean up empty directories
     gallery_path = os.path.join('static', 'images', 'gallery')
     if os.path.exists(gallery_path):
@@ -529,9 +522,7 @@ def gallery():
                         # Get file modification time for sorting
                         try:
                             mtime = file.stat().st_mtime
-                            # Add cache-busting parameter to prevent browser caching
-                            file_path_with_cache_bust = f"{file_path}?v={int(mtime)}"
-                            file_info.append((file_path_with_cache_bust, mtime))
+                            file_info.append((file_path, mtime))
                         except OSError:
                             # If we can't get mtime, use current time
                             file_info.append((file_path, 0))
@@ -544,52 +535,52 @@ def gallery():
                     # Get a random image as cover
                     cover_image = random.choice(images)
                     
-                    # Search for album in database
-                    album = get_album_by_normalized_name(folder.name)
-                    if album:
-                        display_name = album.display_name
-                    else:
-                        # If album not found, create it with beautiful name
-                        display_name = folder.name
-                        # Add diacritics for known names
-                        if folder.name == 'Tresinky':
-                            display_name = 'Třešinky'
-                        elif folder.name == 'Mapy':
-                            display_name = 'Mapy a plány'
-                        elif folder.name == '2023 unor':
-                            display_name = '2023 - Únor'
-                        elif folder.name == '2021 unor':
-                            display_name = '2021 - Únor'
-                        elif folder.name == '2021 duben prace v lese':
-                            display_name = '2021 - Duben - Práce v lese'
-                        elif folder.name == '2020 zari vymerovani':
-                            display_name = '2020 - Září - Vyměřování'
-                        elif folder.name == '2020 rijen vysadba':
-                            display_name = '2020 - Říjen - Výsadba'
-                        elif folder.name == '2020 kveten':
-                            display_name = '2020 - Květen'
-                        elif folder.name == '2020 cerven':
-                            display_name = '2020 - Červen'
-                        elif folder.name == '2019 kveten':
-                            display_name = '2019 - Květen'
-                        elif folder.name == '2019 unor':
-                            display_name = '2019 - Únor'
-                        elif folder.name == '2019 brezen duben':
-                            display_name = '2019 - Březen, duben'
-                        elif folder.name == '2018 zari, rijen, listopad':
-                            display_name = '2018 - Září, říjen, listopad'
-                        elif folder.name == '2017 Obrazky':
-                            display_name = '2017 - Obrázky'
-                        elif folder.name == '2015 puvodni stav pred zahajenim obnovy sadu':
-                            display_name = '2015 - Původní stav před zahájením obnovy sadu'
-                        elif folder.name == '2020':
-                            display_name = '2020 - Celkový přehled'
-                        elif folder.name == '2025':
-                            display_name = '2025 - Nové fotky'
-                        elif folder.name == '1950.LEITA':
-                            display_name = '1950 - Letecký snímek'
-                        elif folder.name == 'Pamětní kniha Cetechovice 1927':
-                            display_name = 'Pamětní kniha Cetechovice 1927'
+                    # Search for album in database - temporarily disabled
+                    # album = get_album_by_normalized_name(folder.name)
+                    # if album:
+                    #     display_name = album.display_name
+                    # else:
+                    # If album not found, create it with beautiful name
+                    display_name = folder.name
+                    # Add diacritics for known names
+                    if folder.name == 'Tresinky':
+                        display_name = 'Třešinky'
+                    elif folder.name == 'Mapy':
+                        display_name = 'Mapy a plány'
+                    elif folder.name == '2023 unor':
+                        display_name = '2023 - Únor'
+                    elif folder.name == '2021 unor':
+                        display_name = '2021 - Únor'
+                    elif folder.name == '2021 duben prace v lese':
+                        display_name = '2021 - Duben - Práce v lese'
+                    elif folder.name == '2020 zari vymerovani':
+                        display_name = '2020 - Září - Vyměřování'
+                    elif folder.name == '2020 rijen vysadba':
+                        display_name = '2020 - Říjen - Výsadba'
+                    elif folder.name == '2020 kveten':
+                        display_name = '2020 - Květen'
+                    elif folder.name == '2020 cerven':
+                        display_name = '2020 - Červen'
+                    elif folder.name == '2019 kveten':
+                        display_name = '2019 - Květen'
+                    elif folder.name == '2019 unor':
+                        display_name = '2019 - Únor'
+                    elif folder.name == '2019 brezen duben':
+                        display_name = '2019 - Březen, duben'
+                    elif folder.name == '2018 zari, rijen, listopad':
+                        display_name = '2018 - Září, říjen, listopad'
+                    elif folder.name == '2017 Obrazky':
+                        display_name = '2017 - Obrázky'
+                    elif folder.name == '2015 puvodni stav pred zahajenim obnovy sadu':
+                        display_name = '2015 - Původní stav před zahájením obnovy sadu'
+                    elif folder.name == '2020':
+                        display_name = '2020 - Celkový přehled'
+                    elif folder.name == '2025':
+                        display_name = '2025 - Nové fotky'
+                    elif folder.name == '1950.LEITA':
+                        display_name = '1950 - Letecký snímek'
+                    elif folder.name == 'Pamětní kniha Cetechovice 1927':
+                        display_name = 'Pamětní kniha Cetechovice 1927'
                         
                         album = create_album_if_not_exists(folder.name, display_name)
                         display_name = album.display_name
@@ -635,7 +626,7 @@ def gallery():
     
     albums = sorted(albums, key=sort_key)
     
-    return render_template('gallery.html', folders=albums)
+    return render_template("gallery.html", folders=albums)
 
 @app.route('/kontakt', methods=['GET', 'POST'])
 def contact():

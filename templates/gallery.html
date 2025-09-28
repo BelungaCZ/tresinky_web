@@ -550,7 +550,7 @@
                             {% for image in folder.images %}
                             <div class="col-6 col-md-3 mb-4">
                                 <div class="gallery-thumb" data-index="{{ loop.index0 }}">
-                                    <img src="{{ url_for('static', filename=image) }}?v={{ range(1000000, 9999999) | random }}" 
+                                    <img src="{{ url_for('static', filename=image) }}" 
                                          alt="{{ folder.name }} - {{ loop.index }}" 
                                          class="img-fluid"
                                          loading="lazy">
