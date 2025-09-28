@@ -213,7 +213,7 @@
     .modal-body .gallery-thumb {
         position: relative;
         width: 100%;
-        padding-top: 75%; /* Пропорция 4:3 */
+        padding-top: 75%; /* Poměr 4:3 */
         overflow: hidden;
         border-radius: 10px;
         margin-bottom: 16px;
@@ -550,7 +550,7 @@
                             {% for image in folder.images %}
                             <div class="col-6 col-md-3 mb-4">
                                 <div class="gallery-thumb" data-index="{{ loop.index0 }}">
-                                    <img src="{{ url_for('static', filename=image) }}" 
+                                    <img src="{{ url_for('static', filename=image) }}?v={{ range(1000000, 9999999) | random }}" 
                                          alt="{{ folder.name }} - {{ loop.index }}" 
                                          class="img-fluid"
                                          loading="lazy">
@@ -560,17 +560,17 @@
                         </div>
                         <!-- Lightbox overlay -->
                         <div class="lightbox-overlay" id="lightboxOverlay{{ loop.index }}">
-                            <button class="lightbox-close" title="Закрыть">
+                            <button class="lightbox-close" title="Zavřít">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 22 22">
                                     <path stroke="#222" stroke-width="2" stroke-linecap="round" d="M6 6l10 10M16 6L6 16"/>
                                 </svg>
                             </button>
-                            <button class="lightbox-arrow left" title="Предыдущее">&#8592;</button>
-                            <img class="lightbox-img" src="" alt="Фото">
-                            <button class="lightbox-arrow right" title="Следующее">&#8594;</button>
+                            <button class="lightbox-arrow left" title="Předchozí">&#8592;</button>
+                            <img class="lightbox-img" src="" alt="Foto">
+                            <button class="lightbox-arrow right" title="Další">&#8594;</button>
                         </div>
                     </div>
-                    <button class="scroll-to-top" id="scrollToTop{{ loop.index }}" title="Наверх">&#8679;</button>
+                    <button class="scroll-to-top" id="scrollToTop{{ loop.index }}" title="Nahoru">&#8679;</button>
                 </div>
                 </div>
             </div>
@@ -663,13 +663,13 @@
         let currentIdx = 0;
         let images = [];
         
-        // Собираем src всех фото
+        // Sběr src všech fotek
         thumbs.forEach(thumb => {
             const img = thumb.querySelector('img');
             images.push(img.getAttribute('src'));
         });
         
-        // Открытие lightbox
+        // Otevření lightbox
         thumbs.forEach((thumb, idx) => {
             thumb.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -682,7 +682,7 @@
             });
         });
         
-        // Закрытие lightbox
+        // Zavření lightbox
         closeBtn.addEventListener('click', function() {
             overlay.classList.remove('active');
             overlayImg.src = '';
@@ -695,7 +695,7 @@
             }
         });
         
-        // Перелистывание
+        // Přepínání
         leftBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             if (currentIdx > 0) {
@@ -719,7 +719,7 @@
             rightBtn.style.display = (currentIdx < images.length - 1) ? 'flex' : 'none';
         }
         
-        // Клавиатурное управление
+        // Klávesnicové ovládání
         document.addEventListener('keydown', function(e) {
             if (!overlay.classList.contains('active')) return;
             
@@ -740,7 +740,7 @@
         });
     });
 
-    // Показать стрелку наверх при скролле модального окна
+    // Zobrazit šipku nahoru při scrollování modálního okna
     const modals = document.querySelectorAll('.modal');
     modals.forEach((modal, idx) => {
         const modalBody = modal.querySelector('.modal-body');

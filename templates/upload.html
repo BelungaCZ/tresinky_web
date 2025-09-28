@@ -81,9 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     }
 
-    // Функция для определения стратегии загрузки
+    // Funkce pro určení strategie nahrávání
     function shouldUseSequentialUpload(files) {
-        // Если больше 1 поддерживаемого файла - используем поштучную загрузку
+        // Pokud více než 1 podporovaný soubor - použijeme poštučnou nahrávku
         let supportedCount = 0;
         for (let i = 0; i < files.length; i++) {
             if (isFileSupported(files[i])) {
@@ -93,11 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return supportedCount > 1;
     }
 
-    // Функция поштучной загрузки файлов
+    // Funkce poštučné nahrávky souborů
     async function uploadFilesSequentially(files, formDataTemplate, progressBarInner, ws) {
         const supportedFiles = [];
         
-        // Собираем поддерживаемые файлы
+        // Sběr podporovaných souborů
         for (let i = 0; i < files.length; i++) {
             if (isFileSupported(files[i])) {
                 supportedFiles.push(files[i]);
@@ -111,25 +111,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = supportedFiles[i];
             
             try {
-                // Создаем FormData для одного файла
+                // Vytvoření FormData pro jeden soubor
                 const singleFileFormData = new FormData();
                 
-                // Копируем все поля кроме файла
+                // Kopírování všech polí kromě souboru
                 for (let [key, value] of formDataTemplate.entries()) {
                     if (key !== 'image') {
                         singleFileFormData.append(key, value);
                     }
                 }
                 
-                // Добавляем один файл
+                // Přidání jednoho souboru
                 singleFileFormData.append('image', file);
                 
-                // Обновляем прогресс перед загрузкой
+                // Aktualizace průběhu před nahráváním
                 const progressPercent = Math.round((i / supportedFiles.length) * 100);
                 progressBarInner.style.width = `${progressPercent}%`;
                 progressBarInner.textContent = `${i + 1}/${supportedFiles.length}: ${file.name}`;
                 
-                // Отправляем файл
+                // Odeslání souboru
                 const response = await fetch('/admin/upload', {
                     method: 'POST',
                     body: singleFileFormData
@@ -142,13 +142,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!contentType || !contentType.includes('application/json')) {
                         const text = await response.text();
                         console.error('Non-JSON response received:', text);
-                        throw new Error('Сервер вернул некорректный ответ');
+                        throw new Error('Server vrátil neplatnou odpověď');
                     }
                     
                     data = await response.json();
                 } catch (parseError) {
                     console.error('Error parsing response:', parseError);
-                    throw new Error('Ошибка обработки ответа сервера');
+                    throw new Error('Chyba zpracování odpovědi serveru');
                 }
                 
                 if (!response.ok) {
@@ -168,15 +168,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error(`Error uploading ${file.name}:`, error);
             }
             
-            // Небольшая пауза между загрузками
+            // Krátká pauza mezi nahrávkami
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        // Финальный прогресс
+        // Finální průběh
         progressBarInner.style.width = '100%';
-        progressBarInner.textContent = 'Завершено';
+        progressBarInner.textContent = 'Dokončeno';
         
-        // Небольшая пауза чтобы пользователь увидел завершение прогресс-бара
+        // Krátká pauza aby uživatel viděl dokončení progress baru
         await new Promise(resolve => setTimeout(resolve, 500));
         
         return {
@@ -253,16 +253,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const files = document.getElementById('image').files;
         
-        // Проверяем наличие файлов
+        // Kontrola přítomnosti souborů
         if (files.length === 0) {
-            alert('Выберите файлы для загрузки.');
+            alert('Vyberte soubory pro nahrání.');
             return;
         }
         
-        // Создаем базовый FormData с метаданными
+        // Vytvoření základního FormData s metadaty
         const baseFormData = new FormData();
         
-        // Добавляем CSRF токен только если он существует (CSRF защита может быть отключена)
+        // Přidání CSRF tokenu pouze pokud existuje (CSRF ochrana může být vypnuta)
         const csrfTokenElement = document.querySelector('input[name="csrf_token"]');
         if (csrfTokenElement) {
             baseFormData.append('csrf_token', csrfTokenElement.value);
@@ -273,11 +273,11 @@ document.addEventListener('DOMContentLoaded', function() {
         baseFormData.append('title', document.getElementById('title').value);
         baseFormData.append('description', document.getElementById('description').value);
         
-        // Показываем прогресс-бар
+        // Zobrazení progress baru
         progressBar.classList.remove('d-none');
         progressBarInner.style.width = '0%';
         
-        // Создаем WebSocket соединение
+        // Vytvoření WebSocket spojení
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws/upload`);
         
@@ -292,9 +292,9 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('WebSocket connection closed');
         };
         
-        // Определяем стратегию загрузки
+        // Určení strategie nahrávání
         if (shouldUseSequentialUpload(files)) {
-            // Поштучная загрузка
+            // Poštučná nahrávka
             console.log('Using sequential upload for', files.length, 'files');
             
             uploadFilesSequentially(files, baseFormData, progressBarInner, ws)
@@ -303,17 +303,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 ws.close();
                 
                 if (result.failed === 0) {
-                    alert(`Все файлы успешно загружены! Обработано: ${result.processed}`);
+                    alert(`Všechny soubory úspěšně nahrány! Zpracováno: ${result.processed}`);
                     window.location.href = '/admin/gallery';
                 } else {
-                    let message = `Загрузка завершена. Успешно: ${result.processed}, неудачно: ${result.failed}`;
+                    let message = `Nahrávka dokončena. Úspěšně: ${result.processed}, neúspěšně: ${result.failed}`;
                     if (result.failedDetails.length > 0) {
-                        message += '\n\nОшибки:\n';
+                        message += '\n\nChyby:\n';
                         result.failedDetails.slice(0, 3).forEach(fail => {
                             message += `- ${fail.name}: ${fail.error}\n`;
                         });
                         if (result.failedDetails.length > 3) {
-                            message += `... и еще ${result.failedDetails.length - 3} ошибок`;
+                            message += `... a ještě ${result.failedDetails.length - 3} chyb`;
                         }
                     }
                     alert(message);
@@ -324,17 +324,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Sequential upload error:', error);
                 progressBar.classList.add('d-none');
                 ws.close();
-                alert('Критическая ошибка загрузки: ' + error.message);
+                alert('Kritická chyba nahrávky: ' + error.message);
             });
             
         } else {
-            // Обычная загрузка одного файла
+            // Obyčejná nahrávka jednoho souboru
             console.log('Using single file upload');
             
-            // Добавляем единственный файл
+            // Přidání jediného souboru
             const file = Array.from(files).find(f => isFileSupported(f));
             if (!file) {
-                alert('Не найдены поддерживаемые файлы.');
+                alert('Nenalezeny podporované soubory.');
                 progressBar.classList.add('d-none');
                 return;
             }
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!contentType || !contentType.includes('application/json')) {
                     return response.text().then(text => {
                         console.error('Non-JSON response received:', text);
-                        throw new Error('Сервер вернул некорректный ответ');
+                        throw new Error('Server vrátil neplatnou odpověď');
                     });
                 }
                 
@@ -365,20 +365,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 ws.close();
                 
                 if (data.success) {
-                    // Небольшая пауза для консистентности с поштучной загрузкой
+                    // Krátká pauza pro konzistenci s poštučnou nahrávkou
                     setTimeout(() => {
-                        alert('Файл успешно загружен!');
+                        alert('Soubor úspěšně nahrán!');
                         window.location.href = '/admin/gallery';
                     }, 100);
                 } else {
-                    alert('Ошибка загрузки: ' + (data.error || 'Неизвестная ошибка'));
+                    alert('Chyba nahrávky: ' + (data.error || 'Neznámá chyba'));
                 }
             })
             .catch(error => {
                 console.error('Single file upload error:', error);
                 progressBar.classList.add('d-none');
                 ws.close();
-                alert('Ошибка загрузки: ' + error.message);
+                alert('Chyba nahrávky: ' + error.message);
             });
         }
     });

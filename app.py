@@ -23,7 +23,7 @@ import shutil
 import random
 from config.config import get_config
 
-# Импорты нашей системы логирования и валидации
+# Imports of our logging and validation system
 from utils import (
     upload_logger, 
     processing_logger, 
@@ -68,7 +68,7 @@ def inject_config():
 upload_sockets = set()
 
 def check_system_dependencies():
-    """Проверка необходимых системных зависимостей при запуске."""
+    """Check required system dependencies on startup."""
     log_function_call(app_logger, 'check_system_dependencies')
     
     dependencies = {
@@ -127,25 +127,25 @@ def send_progress_update(filename, status='processing'):
         except:
             dead_sockets.append(ws)
     
-    # Удаляем мертвые соединения
+    # Remove dead connections
     for ws in dead_sockets:
         upload_sockets.discard(ws)
 
 def send_contact_email(contact_message):
-    """Отправка email уведомления о новом контактном сообщении"""
+    """Send email notification about new contact message"""
     log_function_call(app_logger, 'send_contact_email', 
                      name=contact_message.name, 
                      email=contact_message.email)
     
     try:
-        # Создаем email сообщение
+        # Create email message
         msg = Message(
             subject='Nová zpráva z kontaktního formuláře - Třešinky Cetechovice',
             sender=app.config['MAIL_DEFAULT_SENDER'],
             recipients=[app.config['ADMIN_EMAIL']]
         )
         
-        # HTML содержимое email
+        # HTML content of email
         msg.html = f"""
         <html>
         <body>
@@ -163,7 +163,7 @@ def send_contact_email(contact_message):
         </html>
         """
         
-        # Текстовое содержимое email
+        # Text content of email
         msg.body = f"""
         Nová zpráva z kontaktního formuláře - Třešinky Cetechovice
         
@@ -178,7 +178,7 @@ def send_contact_email(contact_message):
         Tato zpráva byla automaticky odeslána z webu Třešinky Cetechovice
         """
         
-        # Отправляем email
+        # Send email
         mail.send(msg)
         app_logger.info(f"Contact email sent successfully to {app.config['ADMIN_EMAIL']}")
         return True
@@ -201,14 +201,14 @@ class ContactMessage(db.Model):
         self.message = message
 
 class Album(db.Model):
-    """Модель альбома для хранения нормализованных и отображаемых названий."""
+    """Album model for storing normalized and display names."""
     id = db.Column(db.Integer, primary_key=True)
-    normalized_name = db.Column(db.String(100), unique=True, nullable=False)  # Для файловой системы
-    display_name = db.Column(db.String(100), nullable=False)  # Для отображения пользователям
+    normalized_name = db.Column(db.String(100), unique=True, nullable=False)  # For file system
+    display_name = db.Column(db.String(100), nullable=False)  # For user display
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     
-    # Relationship с изображениями
+    # Relationship with images
     images = db.relationship('GalleryImage', backref='album', lazy=True, cascade='all, delete-orphan')
     
     def __init__(self, normalized_name: str, display_name: str):
@@ -251,29 +251,29 @@ class ContactForm(FlaskForm):
 
 def create_album_if_not_exists(normalized_name: str, display_name: str) -> Album:
     """
-    Создает альбом если он не существует, иначе возвращает существующий.
+    Creates album if it doesn't exist, otherwise returns existing one.
     
     Args:
-        normalized_name: Нормализованное имя для файловой системы
-        display_name: Имя для отображения пользователям
+        normalized_name: Normalized name for file system
+        display_name: Name for user display
         
     Returns:
-        Album: Созданный или найденный альбом
+        Album: Created or found album
     """
     log_function_call(database_logger, 'create_album_if_not_exists', 
                      normalized_name=normalized_name, display_name=display_name)
     
     try:
-        # Ищем по нормализованному имени
+        # Search by normalized name
         album = Album.query.filter_by(normalized_name=normalized_name).first()
         
         if album:
-            # Если альбом существует, НЕ перезаписываем display_name
-            # Это позволяет сохранить красивые названия с гачеками
+            # If album exists, do NOT overwrite display_name
+            # This allows preserving beautiful names with diacritics
             database_logger.info(f"Album already exists: {normalized_name} -> {album.display_name}")
             return album
         else:
-            # Создаем новый альбом
+            # Create new album
             album = Album(normalized_name=normalized_name, display_name=display_name)
             db.session.add(album)
             db.session.commit()
@@ -287,13 +287,13 @@ def create_album_if_not_exists(normalized_name: str, display_name: str) -> Album
 
 def get_album_by_normalized_name(normalized_name: str) -> Album | None:
     """
-    Находит альбом по нормализованному имени.
+    Finds album by normalized name.
     
     Args:
-        normalized_name: Нормализованное имя альбома
+        normalized_name: Normalized album name
         
     Returns:
-        Album | None: Найденный альбом или None
+        Album | None: Found album or None
     """
     return Album.query.filter_by(normalized_name=normalized_name).first()
 
@@ -314,15 +314,15 @@ def get_existing_albums():
                     break
             
             if has_files:
-                # Ищем альбом в базе данных по нормализованному имени
+                # Search for album in database by normalized name
                 album = get_album_by_normalized_name(folder.name)
                 if album:
                     albums.append(album)
                 else:
-                    # Если альбом не найден в БД, создаем его с красивым названием
-                    # Преобразуем normalized_name в красивое display_name
+                    # If album not found in DB, create it with beautiful name
+                    # Convert normalized_name to beautiful display_name
                     display_name = folder.name
-                    # Добавляем гачеки для известных названий
+                    # Add diacritics for known names
                     if folder.name == 'Tresinky':
                         display_name = 'Třešinky'
                     elif folder.name == 'Mapy':
@@ -409,23 +409,23 @@ class ImageEditForm(FlaskForm):
 
 def get_image_date(image_path):
     """
-    Извлекает дату создания изображения из EXIF или метаданных файла.
+    Extracts image creation date from EXIF or file metadata.
     
     Args:
-        image_path: Путь к файлу изображения
+        image_path: Path to image file
         
     Returns:
-        datetime: Дата создания изображения
+        datetime: Image creation date
     """
     log_function_call(processing_logger, 'get_image_date', image_path=image_path)
     
     try:
-        # Проверяем существование файла
+        # Check file existence
         if not os.path.exists(image_path):
             processing_logger.warning(f"Image file not found: {image_path}")
             return datetime.now()
         
-        # Специальная обработка для HEIC файлов
+        # Special handling for HEIC files
         if image_path.lower().endswith(('.heic', '.heif')):
             processing_logger.info(f"HEIC file detected, skipping EXIF parsing: {image_path}")
             try:
@@ -437,7 +437,7 @@ def get_image_date(image_path):
                 log_exception(processing_logger, mtime_error, f'getting modification time for HEIC {image_path}')
                 return datetime.now()
         
-        # Пытаемся получить дату из EXIF данных для обычных изображений
+        # Try to get date from EXIF data for regular images
         try:
             with open(image_path, 'rb') as f:
                 tags = exifread.process_file(f, stop_tag='EXIF DateTimeOriginal')
@@ -451,7 +451,7 @@ def get_image_date(image_path):
         except Exception as exif_error:
             log_exception(processing_logger, exif_error, f'reading EXIF from {image_path}')
         
-        # Если EXIF не удалось прочитать, пытаемся получить дату модификации файла
+        # If EXIF couldn't be read, try to get file modification date
         try:
             mtime = os.path.getmtime(image_path)
             date_obj = datetime.fromtimestamp(mtime)
@@ -460,7 +460,7 @@ def get_image_date(image_path):
         except Exception as mtime_error:
             log_exception(processing_logger, mtime_error, f'getting modification time for {image_path}')
         
-        # Если ничего не получилось, возвращаем текущее время
+        # If nothing worked, return current time
         processing_logger.warning(f"Could not determine date for {image_path}, using current time")
         return datetime.now()
         
@@ -488,11 +488,11 @@ def forest():
 
 @app.route('/gallery')
 def gallery():
-    # Синхронизируем базу данных с файловой системой
+    # Synchronize database with file system
     try:
         sync_gallery_with_disk()
     except Exception as e:
-        # Логируем ошибку, но не прерываем отображение галереи
+        # Log error but don't interrupt gallery display
         app_logger.warning(f"Failed to sync database with filesystem: {e}")
     
     # Clean up empty directories
@@ -520,24 +520,38 @@ def gallery():
     if gallery_dir.exists():
         for folder in gallery_dir.iterdir():
             if folder.is_dir() and not folder.name.startswith('.'):
-                # Get all images in the folder
+                # Get all images in the folder and sort by modification time (oldest first)
                 images = []
+                file_info = []
                 for file in folder.iterdir():
                     if file.is_file() and file.suffix.lower() in ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.mp4']:
-                        images.append(os.path.join('images', 'gallery', folder.name, file.name))
+                        file_path = os.path.join('images', 'gallery', folder.name, file.name)
+                        # Get file modification time for sorting
+                        try:
+                            mtime = file.stat().st_mtime
+                            # Add cache-busting parameter to prevent browser caching
+                            file_path_with_cache_bust = f"{file_path}?v={int(mtime)}"
+                            file_info.append((file_path_with_cache_bust, mtime))
+                        except OSError:
+                            # If we can't get mtime, use current time
+                            file_info.append((file_path, 0))
+                
+                # Sort by modification time (oldest first)
+                file_info.sort(key=lambda x: x[1])
+                images = [file_path for file_path, _ in file_info]
                 
                 if images:
                     # Get a random image as cover
                     cover_image = random.choice(images)
                     
-                    # Ищем альбом в базе данных
+                    # Search for album in database
                     album = get_album_by_normalized_name(folder.name)
                     if album:
                         display_name = album.display_name
                     else:
-                        # Если альбом не найден, создаем его с красивым названием
+                        # If album not found, create it with beautiful name
                         display_name = folder.name
-                        # Добавляем гачеки для известных названий
+                        # Add diacritics for known names
                         if folder.name == 'Tresinky':
                             display_name = 'Třešinky'
                         elif folder.name == 'Mapy':
@@ -581,19 +595,45 @@ def gallery():
                         display_name = album.display_name
                     
                     albums.append({
-                        'name': display_name,  # Используем display_name для отображения
-                        'normalized_name': folder.name,  # Сохраняем нормализованное имя
+                        'name': display_name,  # Use display_name for display
+                        'normalized_name': folder.name,  # Keep normalized name
                         'cover_image': cover_image,
                         'images': images
                     })
     
-    # Сортируем альбомы: сначала Pamětní kniha, затем остальные в обратном порядке
+    # Sort albums by date: Pamětní kniha first, then by year (oldest first)
     def sort_key(album):
         if album['name'] == 'Pamětní kniha Cetechovice 1927':
-            return '0000'  # Всегда первым
-        return album['name']
+            return (0, 0)  # Always first
+        
+        # Extract year from album name for sorting
+        import re
+        year_match = re.search(r'(\d{4})', album['name'])
+        if year_match:
+            year = int(year_match.group(1))
+            # For months, extract month number for proper calendar order
+            month_order = {
+                'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+                'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
+                'unor': 2, 'brezen': 3, 'duben': 4, 'kveten': 5, 'cerven': 6,
+                'cervenec': 7, 'srpen': 8, 'zari': 9, 'rijen': 10, 'listopad': 11, 'prosinec': 12,
+                'januar': 1, 'februar': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+            }
+            
+            # Check for month in name
+            month = 0
+            for month_name, month_num in month_order.items():
+                if month_name in album['name'].lower():
+                    month = month_num
+                    break
+            
+            return (1, year, month)  # 1 for regular albums, then year, then month
+        
+        # For albums without clear year, put them at the end
+        return (2, 9999, 0)
     
-    albums = sorted(albums, key=sort_key, reverse=True)
+    albums = sorted(albums, key=sort_key)
     
     return render_template('gallery.html', folders=albums)
 
@@ -624,7 +664,7 @@ def contact():
                 db.session.commit()
                 app_logger.info(f"Contact message saved successfully from {form.email.data}")
                 
-                # Отправляем email уведомление
+                # Send email notification
                 email_sent = send_contact_email(message)
                 if email_sent:
                     app_logger.info("Contact email notification sent successfully")
@@ -651,17 +691,17 @@ def donate():
 @app.route('/admin/upload', methods=['GET', 'POST'])
 def upload_image():
     """
-    Обработка загрузки изображений с полным логированием и exception handling.
+    Image upload processing with full logging and exception handling.
     """
     log_function_call(upload_logger, 'upload_image', method=request.method)
     
     if request.method == 'POST':
-        # Проверяем зависимости только при попытке загрузки
+        # Check dependencies only when attempting upload
         deps_ok, missing = check_system_dependencies()
         if not deps_ok:
             error_msg = f"Image processing dependencies are missing: {', '.join(missing)}"
             upload_logger.error(error_msg)
-            return jsonify({'success': False, 'error': f'Ошибка обработки изображений: {error_msg}. Пожалуйста, установите необходимые зависимости.'})
+            return jsonify({'success': False, 'error': f'Image processing error: {error_msg}. Please install required dependencies.'})
         
         try:
             upload_logger.info("Received POST request to /admin/upload")
@@ -676,29 +716,29 @@ def upload_image():
                 file = request.files.get('image')
                 if not file or not file.filename:
                     upload_logger.error("No file selected")
-                    return jsonify({'success': False, 'error': 'Не выбран файл для загрузки'})
+                    return jsonify({'success': False, 'error': 'No file selected for upload'})
                 
                 upload_logger.info(f"Received single file: {file.filename}")
                 
-                # Валидация одного файла
+                # Single file validation
                 if file.filename.startswith('.'):
                     upload_logger.error(f"Hidden file rejected: {file.filename}")
-                    return jsonify({'success': False, 'error': 'Скрытые файлы не поддерживаются'})
+                    return jsonify({'success': False, 'error': 'Hidden files are not supported'})
 
                 try:
                     is_valid, secure_name, error_msg = file_validator.validate_file(file.filename)
                     if not is_valid:
                         upload_logger.error(f"File validation failed: {error_msg}")
-                        return jsonify({'success': False, 'error': f'Недопустимый файл: {error_msg}'})
+                        return jsonify({'success': False, 'error': f'Invalid file: {error_msg}'})
                     
                     log_file_operation(upload_logger, 'validation', file.filename, 'success', f'Valid file: {secure_name}')
                 except Exception as validation_error:
                     log_exception(upload_logger, validation_error, f'validating file {file.filename}')
-                    return jsonify({'success': False, 'error': f'Ошибка валидации: {str(validation_error)}'})
+                    return jsonify({'success': False, 'error': f'Validation error: {str(validation_error)}'})
 
                 upload_logger.info(f"File validation complete: {secure_name}")
                 
-                # Валидация и нормализация album name
+                # Album name validation and normalization
                 try:
                     album_name = form.new_album.data.strip() if form.new_album.data else form.album.data
                     
@@ -707,14 +747,14 @@ def upload_image():
                         upload_logger.error(error_msg)
                         return jsonify({'success': False, 'error': error_msg})
                     
-                    # Нормализуем имя альбома с помощью нашего валидатора
+                    # Normalize album name using our validator
                     album_name = file_validator.normalize_czech_filename(album_name)
-                    # Дополнительная очистка для имен директорий
-                    album_name = re.sub(r'[<>:"|?*]', '', album_name)  # Удаляем запрещенные символы
+                    # Additional cleanup for directory names
+                    album_name = re.sub(r'[<>:"|?*]', '', album_name)  # Remove forbidden characters
                     album_name = album_name.strip()
                     
                     if not album_name:
-                        error_msg = 'Недопустимое имя альбома после нормализации.'
+                        error_msg = 'Invalid album name after normalization.'
                         upload_logger.error(f"Album name normalization failed for: {form.new_album.data}")
                         return jsonify({'success': False, 'error': error_msg})
                     
@@ -722,29 +762,29 @@ def upload_image():
                     
                 except Exception as album_error:
                     log_exception(upload_logger, album_error, 'validating album name')
-                    return jsonify({'success': False, 'error': f'Ошибка валидации имени альбома: {str(album_error)}'})
+                    return jsonify({'success': False, 'error': f'Album name validation error: {str(album_error)}'})
                 
-                # Создание директории альбома
+                # Create album directory
                 try:
                     album_path = os.path.join('static', 'images', 'gallery', album_name)
                     os.makedirs(album_path, exist_ok=True)
                     upload_logger.info(f"Album directory created/verified: {album_path}")
                 except Exception as dir_error:
                     log_exception(upload_logger, dir_error, f'creating album directory {album_path}')
-                    return jsonify({'success': False, 'error': f'Не удалось создать директорию альбома: {str(dir_error)}'})
+                    return jsonify({'success': False, 'error': f'Failed to create album directory: {str(dir_error)}'})
                 
-                # Обработка единственного файла
+                # Single file processing
                 try:
                     upload_logger.info(f"Processing single file: {file.filename}")
                     
-                    # Уведомляем о начале обработки
+                    # Notify about processing start
                     send_progress_update(secure_name, 'processing')
                     
-                    # Получаем расширение файла
+                    # Get file extension
                     _, ext = os.path.splitext(file.filename)
                     ext = ext.lower()
                     
-                    # Сохраняем файл временно
+                    # Save file temporarily
                     temp_path = os.path.join(album_path, secure_name)
                     try:
                         file.save(temp_path)
@@ -752,18 +792,18 @@ def upload_image():
                     except Exception as save_error:
                         log_exception(upload_logger, save_error, f'saving file {secure_name}')
                         send_progress_update(secure_name, 'failed')
-                        return jsonify({'success': False, 'error': f'Ошибка сохранения: {str(save_error)}'})
+                        return jsonify({'success': False, 'error': f'Save error: {str(save_error)}'})
                     
                     try:
                         if ext in ['.jpg', '.jpeg', '.png', '.webp', '.heic']:
-                            # Обработка изображения
+                            # Image processing
                             try:
                                 result = subprocess.run(
                                     ['./scripts/process_image.sh', temp_path, 'gallery'], 
                                     check=True,
                                     capture_output=True,
                                     text=True,
-                                    timeout=60  # 60 секунд таймаут
+                                    timeout=60  # 60 sekund timeout
                                 )
                                 
                                 processing_logger.info(f"Image processing completed for {secure_name}")
@@ -776,7 +816,7 @@ def upload_image():
                                     error_msg += f" - {proc_error.stderr}"
                                 log_exception(processing_logger, proc_error, f'processing image {secure_name}')
                                 
-                                # Удаляем временный файл при ошибке
+                                # Remove temporary file on error
                                 try:
                                     if os.path.exists(temp_path):
                                         os.remove(temp_path)
@@ -789,7 +829,7 @@ def upload_image():
                                 error_msg = f"Image processing timeout: {timeout_error}"
                                 log_exception(processing_logger, timeout_error, f'processing image {secure_name}')
                                 
-                                # Удаляем временный файл при таймауте
+                                # Remove temporary file on timeout
                                 try:
                                     if os.path.exists(temp_path):
                                         os.remove(temp_path)
@@ -798,19 +838,19 @@ def upload_image():
                                 send_progress_update(secure_name, 'failed')
                                 return jsonify({'success': False, 'error': error_msg})
                             
-                            # Получаем имя обработанного файла
+                            # Get processed file name
                             processed_filename = os.path.splitext(secure_name)[0] + '.webp'
                             
-                            # Получаем дату изображения
+                            # Get image date
                             try:
                                 image_date = get_image_date(temp_path)
                             except Exception as date_error:
                                 log_exception(processing_logger, date_error, f'getting image date for {secure_name}')
                                 image_date = datetime.now()
                             
-                            # Создаем запись в БД
+                            # Create database record
                             try:
-                                # Создаем или получаем альбом
+                                # Create or get album
                                 album = create_album_if_not_exists(album_name, form.new_album.data.strip() if form.new_album.data else form.album.data)
                                 
                                 gallery_image = GalleryImage(
@@ -831,7 +871,7 @@ def upload_image():
                                 return jsonify({'success': False, 'error': f"Database error: {str(db_add_error)}"})
                             
                         elif ext == '.mp4':
-                            # Обработка видео файла
+                            # Video file processing
                             try:
                                 final_path = os.path.join(album_path, secure_name)
                                 if temp_path != final_path:
@@ -839,8 +879,8 @@ def upload_image():
                                 
                                 log_file_operation(upload_logger, 'move', secure_name, 'success', f'Video moved to {final_path}')
                                 
-                                # Создаем запись в БД для видео
-                                # Создаем или получаем альбом
+                                # Create database record for video
+                                # Create or get album
                                 album = create_album_if_not_exists(album_name, form.new_album.data.strip() if form.new_album.data else form.album.data)
                                 
                                 gallery_image = GalleryImage(
@@ -860,7 +900,7 @@ def upload_image():
                                 send_progress_update(secure_name, 'failed')
                                 return jsonify({'success': False, 'error': f"Video processing error: {str(video_error)}"})
                         
-                        # Удаляем временный файл если он все еще существует
+                        # Remove temporary file if it still exists
                         try:
                             if os.path.exists(temp_path):
                                 os.remove(temp_path)
@@ -872,21 +912,21 @@ def upload_image():
                     except Exception as file_process_error:
                         log_exception(upload_logger, file_process_error, f'processing file {secure_name}')
                         
-                        # Очистка при ошибке
+                        # Cleanup on error
                         try:
                             if os.path.exists(temp_path):
                                 os.remove(temp_path)
                         except:
                             pass
                         send_progress_update(secure_name, 'failed')
-                        return jsonify({'success': False, 'error': f'Ошибка обработки: {str(file_process_error)}'})
+                        return jsonify({'success': False, 'error': f'Processing error: {str(file_process_error)}'})
                         
                 except Exception as outer_file_error:
                     log_exception(upload_logger, outer_file_error, f'outer processing for {file.filename}')
                     send_progress_update(secure_name, 'failed')
                     return jsonify({'success': False, 'error': f'Unexpected error: {str(outer_file_error)}'})
                 
-                # Фиксируем изменения в БД для одного файла
+                # Commit database changes for single file
                 try:
                     db.session.commit()
                     database_logger.info(f"Successfully committed single file to database: {secure_name}")
@@ -897,13 +937,13 @@ def upload_image():
                     return jsonify({
                         'success': True, 
                         'filename': secure_name,
-                        'message': f'Файл {secure_name} успешно загружен'
+                        'message': f'Soubor {secure_name} úspěšně nahrán'
                     })
                     
                 except Exception as commit_error:
                     log_exception(database_logger, commit_error, 'committing single file upload')
                     
-                    # Откат транзакции
+                    # Rollback transakce
                     try:
                         db.session.rollback()
                         database_logger.info("Database rollback completed")
@@ -911,7 +951,7 @@ def upload_image():
                         log_exception(database_logger, rollback_error, 'rolling back database session')
                     
                     send_progress_update(secure_name, 'failed')
-                    return jsonify({'success': False, 'error': f'Ошибка сохранения: {str(commit_error)}'})
+                    return jsonify({'success': False, 'error': f'Save error: {str(commit_error)}'})
             else:
                 # Form validation failed
                 errors = []
@@ -1015,9 +1055,9 @@ def edit_image(id):
         image.title = form.title.data
         image.description = form.description.data
         
-        # Обновляем альбом
+        # Aktualizace alba
         if new_album:
-            # Создаем или получаем новый альбом
+            # Vytvoření nebo získání nového alba
             album = create_album_if_not_exists(
                 file_validator.normalize_czech_filename(new_album),
                 new_album
@@ -1097,7 +1137,7 @@ def delete_image(id):
     return redirect(url_for('manage_gallery'))
 
 if __name__ == '__main__':
-    # Проверяем системные зависимости при запуске
+    # Kontrola systémových závislostí při spuštění
     deps_ok, missing = check_system_dependencies()
     if not deps_ok:
         app_logger.warning("Some dependencies are missing, but application will continue")
@@ -1105,13 +1145,13 @@ if __name__ == '__main__':
         print(f"WARNING: Missing dependencies: {', '.join(missing)}")
         print("Application will continue, but image upload functionality may not work properly")
     
-    # Создаем таблицы БД
+    # Vytvoření tabulek DB
     with app.app_context():
         try:
             db.create_all()
             app_logger.info("Database tables created/verified successfully")
             
-            # Автоматическая синхронизация БД с файловой системой при запуске
+            # Automatická synchronizace DB s файловой системой při spuštění
             try:
                 sync_gallery_with_disk()
                 app_logger.info("Database synchronized with filesystem on startup")
