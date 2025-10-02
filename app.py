@@ -21,6 +21,9 @@ from flask_sock import Sock
 import json
 import shutil
 import random
+import requests
+from bs4 import BeautifulSoup
+import re
 from config.config import get_config
 
 # Imports of our logging and validation system
@@ -241,6 +244,24 @@ class GalleryImage(db.Model):
 
     def __repr__(self):
         return f'<GalleryImage {self.filename}>'
+
+class Donor(db.Model):
+    """Donor model for storing donor information from bank statements."""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)  # Amount in CZK
+    donation_date = db.Column(db.DateTime, nullable=False)
+    bank_reference = db.Column(db.String(50), unique=True, nullable=True)  # Bank transaction reference
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __init__(self, name: str, amount: float, donation_date: datetime, bank_reference: str = None):
+        self.name = name
+        self.amount = amount
+        self.donation_date = donation_date
+        self.bank_reference = bank_reference
+
+    def __repr__(self):
+        return f'<Donor {self.name} - {self.amount} CZK - {self.donation_date}>'
 
 # Forms
 class ContactForm(FlaskForm):
@@ -677,7 +698,16 @@ def contact():
 
 @app.route('/podpora')
 def donate():
-    return render_template('donate.html')
+    # Sync donors from bank statement
+    try:
+        sync_donors_with_bank()
+    except Exception as e:
+        app_logger.warning(f"Failed to sync donors: {e}")
+    
+    # Get all donors from database, ordered by donation date (newest first)
+    donors = Donor.query.order_by(desc(Donor.donation_date)).all()
+    
+    return render_template('donate.html', donors=donors)
 
 @app.route('/admin/upload', methods=['GET', 'POST'])
 def upload_image():
@@ -1021,6 +1051,157 @@ def sync_gallery_with_disk():
         
     except Exception as e:
         log_exception(database_logger, e, 'sync_gallery_with_disk')
+        raise
+
+def parse_bank_statement():
+    """Parse bank statement data from Fio banka transparent account and return list of donors."""
+    log_function_call(database_logger, 'parse_bank_statement')
+    
+    donors_data = []
+    
+    try:
+        # URL for the Fio banka transparent account
+        url = "https://ib.fio.cz/ib/transparent?a=2903205559&f=16.06.2025"
+        
+        # Headers to mimic a real browser request
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'cs-CZ,cs;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        database_logger.info(f"Fetching bank statement from: {url}")
+        
+        # Make request to the bank statement page
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        # Parse HTML content
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Find the transactions table
+        # Looking for table with transaction data
+        tables = soup.find_all('table')
+        
+        for table in tables:
+            rows = table.find_all('tr')
+            
+            for row in rows[1:]:  # Skip header row
+                cells = row.find_all('td')
+                
+                if len(cells) >= 5:  # Ensure we have enough columns
+                    try:
+                        # Extract data from table cells
+                        date_str = cells[0].get_text(strip=True)
+                        amount_str = cells[1].get_text(strip=True)
+                        transaction_type = cells[2].get_text(strip=True)
+                        account_name = cells[3].get_text(strip=True)
+                        message = cells[4].get_text(strip=True) if len(cells) > 4 else ""
+                        
+                        # Only process incoming payments (positive amounts)
+                        if 'příchozí platba' in transaction_type.lower() and amount_str and not amount_str.startswith('-'):
+                            # Parse amount (remove "CZK" and convert to float)
+                            # Handle Czech number format: "1 000,00 CZK" -> 1000.0
+                            # First replace comma with dot for decimal separator, then remove spaces
+                            amount_clean = amount_str.replace('CZK', '').replace(',', '.').strip()
+                            # Remove all spaces
+                            amount_clean = re.sub(r'\s+', '', amount_clean)
+                            try:
+                                amount = float(amount_clean)
+                                
+                                # Parse date
+                                try:
+                                    # Expected format: DD.MM.YYYY
+                                    day, month, year = date_str.split('.')
+                                    donation_date = datetime(int(year), int(month), int(day))
+                                except:
+                                    # Fallback to current date if parsing fails
+                                    donation_date = datetime.now()
+                                
+                                # Use account name as donor name, clean it up
+                                donor_name = account_name.strip()
+                                
+                                # Skip if it's not a real person's name (avoid system transactions)
+                                if (donor_name and 
+                                    donor_name != 'Spolek singulárních podílníků Třešinky Cetechovice' and
+                                    not donor_name.isdigit() and
+                                    len(donor_name) > 2):
+                                    
+                                    # Create unique bank reference
+                                    bank_ref = f"{donor_name.upper().replace(' ', '_')}_{donation_date.strftime('%Y_%m_%d')}"
+                                    
+                                    donor_data = {
+                                        'name': donor_name,
+                                        'amount': amount,
+                                        'donation_date': donation_date,
+                                        'bank_reference': bank_ref
+                                    }
+                                    
+                                    donors_data.append(donor_data)
+                                    database_logger.info(f"Parsed donor: {donor_name} - {amount} CZK ({donation_date.strftime('%d.%m.%Y')})")
+                                    
+                            except ValueError:
+                                database_logger.warning(f"Could not parse amount: {amount_str}")
+                                continue
+                                
+                    except Exception as e:
+                        database_logger.warning(f"Error parsing table row: {e}")
+                        continue
+        
+        database_logger.info(f"Successfully parsed {len(donors_data)} donors from bank statement")
+        
+    except requests.RequestException as e:
+        database_logger.error(f"Failed to fetch bank statement: {e}")
+        # Fallback to empty list if API fails
+        donors_data = []
+    except Exception as e:
+        database_logger.error(f"Error parsing bank statement: {e}")
+        # Fallback to empty list if parsing fails
+        donors_data = []
+    
+    return donors_data
+
+def sync_donors_with_bank():
+    """Sync donors from bank statement to database, avoiding duplicates."""
+    log_function_call(database_logger, 'sync_donors_with_bank')
+    
+    try:
+        # Get existing donors from database
+        existing_donors = {donor.bank_reference: donor for donor in Donor.query.all()}
+        database_logger.info(f"Found {len(existing_donors)} existing donors in database")
+        
+        # Parse bank statement
+        bank_donors = parse_bank_statement()
+        
+        # Add new donors (avoid duplicates)
+        new_donors_count = 0
+        for donor_data in bank_donors:
+            bank_ref = donor_data['bank_reference']
+            
+            if bank_ref not in existing_donors:
+                new_donor = Donor(
+                    name=donor_data['name'],
+                    amount=donor_data['amount'],
+                    donation_date=donor_data['donation_date'],
+                    bank_reference=bank_ref
+                )
+                db.session.add(new_donor)
+                new_donors_count += 1
+                database_logger.info(f"Added new donor: {donor_data['name']} - {donor_data['amount']} CZK")
+            else:
+                database_logger.info(f"Donor already exists: {donor_data['name']}")
+        
+        if new_donors_count > 0:
+            db.session.commit()
+            database_logger.info(f"Successfully added {new_donors_count} new donors")
+        else:
+            database_logger.info("No new donors to add")
+            
+    except Exception as e:
+        log_exception(database_logger, e, 'sync_donors_with_bank')
         raise
 
 @app.route('/admin/gallery')
