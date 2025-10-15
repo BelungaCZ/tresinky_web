@@ -4,7 +4,7 @@ from pathlib import Path
 class Config:
     """Base configuration."""
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///tresinky.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', f'sqlite:///{os.path.join(os.path.dirname(__file__), "..", "instance", "tresinky.db")}')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     MAX_CONTENT_LENGTH = 400 * 1024 * 1024  # 400MB max file size
     
