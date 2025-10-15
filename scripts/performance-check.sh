@@ -360,4 +360,4 @@ echo "   • Переменная окружения: export PAGESPEED_API_KEY=Y
 echo ""
 echo "📈 Файлы результатов:"
 echo "   • История: $HISTORY_FILE"
-echo "   • Документация: Обновите PERFORMANCE_METRICS.md с новыми данными" 
+echo "   • Documentation: Update docs/PERFORMANCE_METRICS.md with new data" 

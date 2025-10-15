@@ -1,315 +1,585 @@
-# Tresinky Web Server - Logging Guide
+# Logging Guide
 
-This document provides comprehensive instructions for checking logs on the Tresinky web server running in production.
+## Overview
+This document provides comprehensive guidance for the logging system in the Třešinky Cetechovice web application, including configuration, usage, and monitoring.
 
-## Quick Start
+## 📋 Logging Architecture
 
-Connect to the production server:
-```bash
-ssh tresinky@80.211.195.223
-# or if you have SSH config set up:
-ssh tresinky
+### Log Files Structure
+```
+logs/
+├── app.log          # Main application logs
+├── database.log     # Database operation logs
+├── errors.log       # Error and exception logs
+├── processing.log   # Image processing logs
+└── upload.log       # File upload logs
 ```
 
-## Container Status Check
+### Log Levels
+- **DEBUG** - Detailed information for debugging
+- **INFO** - General information about program execution
+- **WARNING** - Something unexpected happened
+- **ERROR** - Serious problem occurred
+- **CRITICAL** - Very serious error occurred
 
-Always start by checking the current status of all containers:
-```bash
-docker ps -a
+## 🔧 Logging Configuration
+
+### Centralized Logger Setup
+```python
+# utils/logger.py
+import logging
+import os
+from datetime import datetime
+
+class Logger:
+    def __init__(self, name, log_file, level=logging.INFO):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(level)
+        
+        # Create logs directory if it doesn't exist
+        os.makedirs('logs', exist_ok=True)
+        
+        # Create file handler
+        file_handler = logging.FileHandler(f'logs/{log_file}')
+        file_handler.setLevel(level)
+        
+        # Create formatter
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        file_handler.setFormatter(formatter)
+        
+        # Add handler to logger
+        self.logger.addHandler(file_handler)
+    
+    def debug(self, message):
+        self.logger.debug(message)
+    
+    def info(self, message):
+        self.logger.info(message)
+    
+    def warning(self, message):
+        self.logger.warning(message)
+    
+    def error(self, message):
+        self.logger.error(message)
+    
+    def critical(self, message):
+        self.logger.critical(message)
+
+# Create logger instances
+app_logger = Logger('app', 'app.log')
+db_logger = Logger('database', 'database.log')
+error_logger = Logger('errors', 'errors.log')
+processing_logger = Logger('processing', 'processing.log')
+upload_logger = Logger('upload', 'upload.log')
 ```
 
-## 1. Container Logs
+### Application Logging
+```python
+# app.py
+from utils.logger import app_logger, db_logger, error_logger
 
-### Flask App Logs (Main Application)
-```bash
-# Recent logs (last 50 lines)
-docker logs --tail 50 tresinky_web-web-1
-
-# Follow logs in real-time
-docker logs -f tresinky_web-web-1
-
-# Logs since specific time
-docker logs --since 1h tresinky_web-web-1
-docker logs --since "2025-08-26T07:00:00" tresinky_web-web-1
-
-# All logs (use with caution - can be very long)
-docker logs tresinky_web-web-1
+@app.route('/')
+def home():
+    app_logger.info("Home page accessed")
+    try:
+        # Application logic
+        return render_template('home.html')
+    except Exception as e:
+        error_logger.error(f"Error in home route: {str(e)}")
+        return "Error occurred", 500
 ```
 
-### Nginx Proxy Logs
-```bash
-# Recent logs
-docker logs --tail 50 nginx-proxy
+### Database Logging
+```python
+# Database operations
+def log_database_operation(operation, table, details=None):
+    db_logger.info(f"Database {operation} on {table}")
+    if details:
+        db_logger.debug(f"Details: {details}")
 
-# Follow logs in real-time
-docker logs -f nginx-proxy
-
-# Logs since specific time
-docker logs --since 1h nginx-proxy
+# Example usage
+def create_contact_message(name, email, message):
+    log_database_operation("INSERT", "contact_message", {
+        "name": name,
+        "email": email
+    })
+    
+    message = ContactMessage(
+        name=name,
+        email=email,
+        message=message
+    )
+    
+    try:
+        db.session.add(message)
+        db.session.commit()
+        db_logger.info("Contact message created successfully")
+    except Exception as e:
+        db_logger.error(f"Failed to create contact message: {str(e)}")
+        raise
 ```
 
-### Let's Encrypt SSL Logs
-```bash
-# Recent logs
-docker logs --tail 50 nginx-letsencrypt
+## 📊 Log Categories
 
-# Follow logs in real-time
-docker logs -f nginx-letsencrypt
+### Application Logs (app.log)
+**Purpose:** General application flow and user actions
+**Level:** INFO, WARNING, ERROR
 
-# Logs since specific time
-docker logs --since 1h nginx-letsencrypt
+**Examples:**
+```
+2024-01-15 10:30:15 - app - INFO - Home page accessed
+2024-01-15 10:30:20 - app - INFO - Gallery page accessed
+2024-01-15 10:30:25 - app - WARNING - Slow response time: 2.5s
+2024-01-15 10:30:30 - app - ERROR - Failed to load gallery images
 ```
 
-## 2. Application-Specific Logs
+### Database Logs (database.log)
+**Purpose:** Database operations and queries
+**Level:** DEBUG, INFO, ERROR
 
-### Flask App Internal Logs
-```bash
-# Gunicorn access logs (web server)
-docker exec tresinky_web-web-1 tail -50 /app/logs/gunicorn.log
-
-# Application logs (Flask app)
-docker exec tresinky_web-web-1 tail -50 /app/logs/app.log
-
-# Database logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/database.log
-
-# Error logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/errors.log
-
-# Validation logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/validation.log
-
-# Processing logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/processing.log
-
-# Upload logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/upload.log
-
-# Performance logs
-docker exec tresinky_web-web-1 tail -50 /app/logs/performance-history.log
+**Examples:**
+```
+2024-01-15 10:30:15 - database - INFO - Database INSERT on contact_message
+2024-01-15 10:30:15 - database - DEBUG - Details: {'name': 'John Doe', 'email': 'john@example.com'}
+2024-01-15 10:30:20 - database - INFO - Database SELECT on gallery_image
+2024-01-15 10:30:20 - database - ERROR - Database connection failed: timeout
 ```
 
-### Nginx Internal Logs
-```bash
-# Access logs
-docker exec nginx-proxy tail -50 /var/log/nginx/access.log
+### Error Logs (errors.log)
+**Purpose:** Exceptions and critical errors
+**Level:** ERROR, CRITICAL
 
-# Error logs
-docker exec nginx-proxy tail -50 /var/log/nginx/error.log
-
-# Check if logs exist
-docker exec nginx-proxy ls -la /var/log/nginx/
+**Examples:**
+```
+2024-01-15 10:30:15 - errors - ERROR - Error in home route: division by zero
+2024-01-15 10:30:20 - errors - CRITICAL - Database connection lost
+2024-01-15 10:30:25 - errors - ERROR - File upload failed: disk full
 ```
 
-## 3. Real-time Monitoring
+### Processing Logs (processing.log)
+**Purpose:** Image processing operations
+**Level:** INFO, WARNING, ERROR
 
-### Follow Multiple Logs Simultaneously
-```bash
-# Watch all container logs in real-time (background processes)
-docker logs -f tresinky_web-web-1 & 
-docker logs -f nginx-proxy & 
-docker logs -f nginx-letsencrypt
-
-# Stop background processes
-jobs
-kill %1 %2 %3
+**Examples:**
+```
+2024-01-15 10:30:15 - processing - INFO - Processing image: photo.jpg
+2024-01-15 10:30:16 - processing - INFO - Converted to WebP: photo.webp
+2024-01-15 10:30:17 - processing - WARNING - Large image processed: 5MB
+2024-01-15 10:30:18 - processing - ERROR - Image processing failed: invalid format
 ```
 
-### Follow Specific Log Files in Real-time
-```bash
-# Follow gunicorn logs
-docker exec tresinky_web-web-1 tail -f /app/logs/gunicorn.log
+### Upload Logs (upload.log)
+**Purpose:** File upload operations
+**Level:** INFO, WARNING, ERROR
 
-# Follow application logs
-docker exec tresinky_web-web-1 tail -f /app/logs/app.log
-
-# Follow nginx access logs
-docker exec nginx-proxy tail -f /var/log/nginx/access.log
+**Examples:**
+```
+2024-01-15 10:30:15 - upload - INFO - File upload started: photo.jpg
+2024-01-15 10:30:16 - upload - INFO - File validation passed: photo.jpg
+2024-01-15 10:30:17 - upload - WARNING - Large file uploaded: 10MB
+2024-01-15 10:30:18 - upload - ERROR - Upload failed: file too large
 ```
 
-## 4. Time-based Log Filtering
+## 🔍 Log Analysis
 
-### Recent Activity
+### Real-time Monitoring
 ```bash
-# Last hour
-docker logs --since 1h tresinky_web-web-1
+# Monitor all logs
+tail -f logs/*.log
 
-# Last 30 minutes
-docker logs --since 30m tresinky_web-web-1
+# Monitor specific log
+tail -f logs/app.log
 
-# Since specific date/time
-docker logs --since "2025-08-26T07:00:00" tresinky_web-web-1
-docker logs --since "2025-08-26" tresinky_web-web-1
+# Monitor errors only
+tail -f logs/errors.log
+
+# Monitor with timestamps
+tail -f logs/app.log | while read line; do echo "$(date): $line"; done
 ```
 
-### Specific Time Ranges
+### Log Search and Filtering
 ```bash
-# Between two timestamps
-docker logs --since "2025-08-26T07:00:00" --until "2025-08-26T08:00:00" tresinky_web-web-1
+# Search for specific errors
+grep "ERROR" logs/*.log
+
+# Search for specific user
+grep "john@example.com" logs/*.log
+
+# Search for specific time range
+grep "2024-01-15 10:30" logs/*.log
+
+# Count error occurrences
+grep -c "ERROR" logs/*.log
+
+# Search with context
+grep -A 5 -B 5 "database connection" logs/*.log
 ```
 
-## 5. Log Analysis Commands
-
-### Search for Specific Content
+### Log Statistics
 ```bash
-# Search for errors
-docker logs tresinky_web-web-1 | grep -i "error"
+# Count log entries by level
+grep -c "INFO" logs/app.log
+grep -c "WARNING" logs/app.log
+grep -c "ERROR" logs/app.log
 
-# Search for warnings
-docker logs tresinky_web-web-1 | grep -i "warning"
+# Count database operations
+grep -c "Database" logs/database.log
 
-# Search for specific IP addresses
-docker logs tresinky_web-web-1 | grep "85.163.140.109"
+# Count uploads
+grep -c "upload" logs/upload.log
 
-# Search for specific routes
-docker logs tresinky_web-web-1 | grep "/gallery"
+# Count processing operations
+grep -c "processing" logs/processing.log
 ```
 
-### Count and Statistics
-```bash
-# Count total log lines
-docker logs tresinky_web-web-1 | wc -l
+## 📈 Performance Monitoring
 
-# Count errors
-docker logs tresinky_web-web-1 | grep -c -i "error"
+### Response Time Logging
+```python
+# Add to app.py
+import time
+from functools import wraps
 
-# Count successful requests
-docker logs tresinky_web-web-1 | grep -c "200"
+def log_response_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        
+        response_time = end_time - start_time
+        app_logger.info(f"Response time for {func.__name__}: {response_time:.4f}s")
+        
+        if response_time > 2.0:
+            app_logger.warning(f"Slow response time: {response_time:.4f}s")
+        
+        return result
+    return wrapper
+
+# Use decorator
+@log_response_time
+@app.route('/gallery')
+def gallery():
+    # Gallery logic
+    pass
 ```
 
-## 6. Quick Status Commands
+### Memory Usage Logging
+```python
+# Add to app.py
+import psutil
+import os
 
-### One-liner Status Check
-```bash
-docker ps && echo "--- Recent App Logs ---" && docker logs --tail 10 tresinky_web-web-1
+def log_memory_usage():
+    process = psutil.Process(os.getpid())
+    memory_info = process.memory_info()
+    memory_mb = memory_info.rss / 1024 / 1024
+    
+    app_logger.info(f"Memory usage: {memory_mb:.2f} MB")
+    
+    if memory_mb > 500:  # 500MB threshold
+        app_logger.warning(f"High memory usage: {memory_mb:.2f} MB")
+
+# Call periodically
+@app.before_request
+def before_request():
+    log_memory_usage()
 ```
 
-### Container Health Check
+## 🔄 Log Rotation
+
+### Manual Log Rotation
 ```bash
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" && echo "--- Memory Usage ---" && docker stats --no-stream
+# Create log rotation script
+nano scripts/rotate_logs.sh
 ```
 
-### Log File Sizes
+#### Log Rotation Script
 ```bash
-docker exec tresinky_web-web-1 du -h /app/logs/* && echo "--- Nginx Logs ---" && docker exec nginx-proxy du -h /var/log/nginx/*
+#!/bin/bash
+# rotate_logs.sh
+
+LOG_DIR="logs"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p "$LOG_DIR/backups"
+
+# Rotate logs
+for log_file in "$LOG_DIR"/*.log; do
+    if [ -f "$log_file" ]; then
+        # Compress and move to backup
+        gzip -c "$log_file" > "$LOG_DIR/backups/$(basename "$log_file")_$DATE.gz"
+        
+        # Clear current log
+        > "$log_file"
+        
+        echo "Rotated: $log_file"
+    fi
+done
+
+# Remove old backups (keep last 30 days)
+find "$LOG_DIR/backups" -name "*.gz" -mtime +30 -delete
+
+echo "Log rotation completed"
 ```
 
-## 7. Troubleshooting Commands
-
-### Check for Common Issues
+#### Make Script Executable
 ```bash
-# Check for failed container starts
-docker ps -a | grep -v "Up"
+chmod +x scripts/rotate_logs.sh
+```
 
-# Check for high memory usage
-docker stats --no-stream
+### Automated Log Rotation
+```bash
+# Add to crontab
+crontab -e
 
-# Check disk space
+# Add log rotation job (daily at 2 AM)
+0 2 * * * /path/to/tresinky-web/scripts/rotate_logs.sh
+```
+
+### System Log Rotation
+```bash
+# Create system logrotate configuration
+sudo nano /etc/logrotate.d/tresinky
+```
+
+#### Logrotate Configuration
+```
+/path/to/tresinky-web/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 644 www-data www-data
+    postrotate
+        # Restart application to reopen log files
+        docker compose restart web
+    endscript
+}
+```
+
+## 🚨 Error Monitoring
+
+### Error Detection
+```bash
+# Monitor for critical errors
+tail -f logs/errors.log | grep "CRITICAL"
+
+# Monitor for database errors
+tail -f logs/database.log | grep "ERROR"
+
+# Monitor for upload errors
+tail -f logs/upload.log | grep "ERROR"
+```
+
+### Error Alerting
+```bash
+# Create error alert script
+nano scripts/error_alert.sh
+```
+
+#### Error Alert Script
+```bash
+#!/bin/bash
+# error_alert.sh
+
+ERROR_COUNT=$(grep -c "ERROR\|CRITICAL" logs/*.log | awk -F: '{sum+=$2} END {print sum}')
+
+if [ "$ERROR_COUNT" -gt 10 ]; then
+    echo "High error count detected: $ERROR_COUNT"
+    # Send email alert
+    echo "High error count: $ERROR_COUNT" | mail -s "Alert: High Error Count" admin@your-domain.com
+fi
+```
+
+### Error Analysis
+```bash
+# Analyze error patterns
+grep "ERROR" logs/*.log | cut -d' ' -f4- | sort | uniq -c | sort -nr
+
+# Analyze error frequency by hour
+grep "ERROR" logs/*.log | cut -d' ' -f2 | cut -d':' -f1 | sort | uniq -c
+
+# Analyze error frequency by day
+grep "ERROR" logs/*.log | cut -d' ' -f1 | sort | uniq -c
+```
+
+## 📊 Log Analytics
+
+### Log Parsing Script
+```python
+# scripts/log_analyzer.py
+import re
+from collections import defaultdict
+from datetime import datetime
+
+def analyze_logs():
+    log_files = [
+        'logs/app.log',
+        'logs/database.log',
+        'logs/errors.log',
+        'logs/processing.log',
+        'logs/upload.log'
+    ]
+    
+    stats = {
+        'total_entries': 0,
+        'error_count': 0,
+        'warning_count': 0,
+        'info_count': 0,
+        'errors_by_type': defaultdict(int),
+        'errors_by_hour': defaultdict(int)
+    }
+    
+    for log_file in log_files:
+        try:
+            with open(log_file, 'r') as f:
+                for line in f:
+                    stats['total_entries'] += 1
+                    
+                    if 'ERROR' in line:
+                        stats['error_count'] += 1
+                        # Extract error type
+                        error_match = re.search(r'ERROR - (.+?):', line)
+                        if error_match:
+                            stats['errors_by_type'][error_match.group(1)] += 1
+                        
+                        # Extract hour
+                        time_match = re.search(r'(\d{2}):\d{2}:\d{2}', line)
+                        if time_match:
+                            stats['errors_by_hour'][time_match.group(1)] += 1
+                    
+                    elif 'WARNING' in line:
+                        stats['warning_count'] += 1
+                    elif 'INFO' in line:
+                        stats['info_count'] += 1
+        
+        except FileNotFoundError:
+            print(f"Log file not found: {log_file}")
+    
+    return stats
+
+if __name__ == "__main__":
+    stats = analyze_logs()
+    print("Log Analysis Results:")
+    print(f"Total entries: {stats['total_entries']}")
+    print(f"Errors: {stats['error_count']}")
+    print(f"Warnings: {stats['warning_count']}")
+    print(f"Info: {stats['info_count']}")
+    print("\nTop error types:")
+    for error_type, count in sorted(stats['errors_by_type'].items(), key=lambda x: x[1], reverse=True)[:5]:
+        print(f"  {error_type}: {count}")
+```
+
+### Performance Metrics
+```python
+# scripts/performance_analyzer.py
+import re
+from collections import defaultdict
+
+def analyze_performance():
+    performance_data = []
+    
+    with open('logs/app.log', 'r') as f:
+        for line in f:
+            # Extract response times
+            time_match = re.search(r'Response time for (\w+): ([\d.]+)s', line)
+            if time_match:
+                endpoint = time_match.group(1)
+                response_time = float(time_match.group(2))
+                performance_data.append((endpoint, response_time))
+    
+    # Calculate statistics
+    endpoints = defaultdict(list)
+    for endpoint, time in performance_data:
+        endpoints[endpoint].append(time)
+    
+    print("Performance Analysis:")
+    for endpoint, times in endpoints.items():
+        avg_time = sum(times) / len(times)
+        max_time = max(times)
+        min_time = min(times)
+        print(f"{endpoint}: avg={avg_time:.4f}s, max={max_time:.4f}s, min={min_time:.4f}s")
+
+if __name__ == "__main__":
+    analyze_performance()
+```
+
+## 🚨 Troubleshooting
+
+### Common Log Issues
+
+#### Log Files Not Created
+```bash
+# Check directory permissions
+ls -la logs/
+
+# Fix permissions
+chmod 755 logs/
+chown www-data:www-data logs/
+```
+
+#### Log Files Too Large
+```bash
+# Check file sizes
+du -h logs/*.log
+
+# Rotate large files
+./scripts/rotate_logs.sh
+```
+
+#### Missing Log Entries
+```python
+# Check logger configuration
+from utils.logger import app_logger
+app_logger.info("Test log entry")
+```
+
+### Log Performance Issues
+
+#### Slow Log Writing
+```python
+# Use async logging
+import asyncio
+import aiofiles
+
+async def async_log(logger, level, message):
+    async with aiofiles.open(f'logs/{logger}.log', 'a') as f:
+        await f.write(f"{datetime.now()} - {level} - {message}\n")
+```
+
+#### High Disk Usage
+```bash
+# Monitor disk usage
 df -h
 
-# Check for port conflicts
-netstat -tulpn | grep :80
-netstat -tulpn | grep :443
-netstat -tulpn | grep :5000
+# Clean old logs
+find logs/ -name "*.log" -mtime +30 -delete
 ```
 
-### Verify SSL Certificates
-```bash
-# Check SSL certificate status
-docker exec nginx-proxy ls -la /etc/nginx/certs/
+## 📚 Additional Resources
 
-# Test SSL connection locally
-curl -v -k https://localhost/
-```
+### Documentation
+- [Environment Setup](environment_setup.md) - Logging setup
+- [Deployment Guide](deployment_guide.md) - Production logging
+- [Database Documentation](database.md) - Database logging
 
-## 8. Log Rotation and Maintenance
+### Tools
+- **ELK Stack** - Elasticsearch, Logstash, Kibana
+- **Fluentd** - Log collection and processing
+- **Grafana** - Log visualization and monitoring
 
-### Check Log File Sizes
-```bash
-# Check all log file sizes
-docker exec tresinky_web-web-1 find /app/logs -name "*.log" -exec ls -lh {} \;
+### Support
+- Check log files for error details
+- Review system logs for infrastructure issues
+- Contact development team for logging support
 
-# Check nginx log sizes
-docker exec nginx-proxy find /var/log/nginx -name "*.log" -exec ls -lh {} \;
-```
+---
 
-### Clean Old Logs (if needed)
-```bash
-# Clear specific log files (use with caution)
-docker exec tresinky_web-web-1 truncate -s 0 /app/logs/app.log
-docker exec tresinky_web-web-1 truncate -s 0 /app/logs/gunicorn.log
-```
-
-## 9. Advanced Monitoring
-
-### Set up Continuous Monitoring
-```bash
-# Create a monitoring script
-cat > monitor_logs.sh << 'EOF'
-#!/bin/bash
-while true; do
-    echo "=== $(date) ==="
-    docker logs --tail 5 tresinky_web-web-1
-    echo "---"
-    sleep 30
-done
-EOF
-
-chmod +x monitor_logs.sh
-./monitor_logs.sh
-```
-
-### Export Logs for Analysis
-```bash
-# Export logs to local machine
-docker logs tresinky_web-web-1 > app_logs.txt
-docker logs nginx-proxy > nginx_logs.txt
-
-# Or copy specific log files
-docker cp tresinky_web-web-1:/app/logs/app.log ./app.log
-docker cp nginx-proxy:/var/log/nginx/access.log ./nginx_access.log
-```
-
-## 10. Common Log Patterns
-
-### Successful Request Pattern
-```
-2025-08-26 05:54:42 - app - INFO - Calling contact(method=GET)
-2025-08-26 05:54:42 - app - INFO - Request URL: https://sad-tresinky-cetechovice.cz/kontakt
-```
-
-### Error Pattern
-```
-2025-08-26 05:18:09 - app - WARNING - Dependency check failed: convert not found
-```
-
-### Database Operation Pattern
-```
-2025-08-26 05:51:05 - database - INFO - Created new album: 2020 - Celkový přehled (2020)
-```
-
-## Notes
-
-- **Container Names**: The main containers are `tresinky_web-web-1`, `nginx-proxy`, and `nginx-letsencrypt`
-- **Log Locations**: Application logs are in `/app/logs/` inside the Flask container
-- **Real-time Monitoring**: Use `Ctrl+C` to stop following logs
-- **File Permissions**: Some log files may require root access to view
-- **Log Rotation**: Logs are automatically managed by the application
-
-## Emergency Commands
-
-If the website is down or experiencing issues:
-```bash
-# Check container status
-docker ps -a
-
-# Restart containers
-docker restart tresinky_web-web-1
-docker restart nginx-proxy
-
-# Check recent errors
-docker logs --tail 100 tresinky_web-web-1 | grep -i "error\|exception\|fail"
-
-# Verify website accessibility
-curl -v https://sad-tresinky-cetechovice.cz/
-```
+*Last updated: [Current Date]*
+*Next review: [Next Review Date]*

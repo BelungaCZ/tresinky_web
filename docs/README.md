@@ -2,7 +2,7 @@
 
 ## Overview
 Web application for Třešinky Cetechovice, featuring a gallery, contact form, and donation system.
-It should run faster than 90% other webpages on mobile devices. Speed is the key.
+It should run faster than 90% of other webpages on mobile devices. Speed is the key.
 
 ## Features
 - Responsive design for all devices
@@ -16,47 +16,44 @@ It should run faster than 90% other webpages on mobile devices. Speed is the key
 - Automatic image optimization and WebP conversion
 - Album management with automatic cleanup of empty directories
 
-## 📚 Документация
+## 📚 Documentation
 
 ### 🚀 Setup & Configuration
-- **[Environment Setup](docs/environment_setup.md)** - Настройка окружения разработки и продакшена
-- **[Deployment Guide](docs/deployment_guide.md)** - Полное руководство по деплою приложения
+- **[Environment Setup](environment_setup.md)** - Development and production environment setup
+- **[Deployment Guide](deployment_guide.md)** - Complete application deployment guide
 
 ### 💻 Development  
-- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Детальный план реализации исправлений и улучшений
-- **[Optimization Plan](OPTIMIZATION_PLAN.md)** - Комплексный план оптимизации производительности
-- **[Changelog](CHANGELOG.md)** - История изменений и обновлений проекта
-- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Detailed implementation plan for fixes and improvements
+- **[Optimization Plan](OPTIMIZATION_PLAN.md)** - Comprehensive performance optimization plan
+- **[Changelog](CHANGELOG.md)** - Project change history and updates
+- **[Database Documentation](database.md)** - Detailed database documentation
 
 ### 📊 Performance & Testing
-- **[Performance Metrics](PERFORMANCE_METRICS.md)** - Система мониторинга метрик производительности
-- **[Mobile Testing Guide](MOBILE_TESTING_GUIDE.md)** - Руководство по тестированию оптимизаций на мобильных устройствах
-- **[Configuration Testing](#configuration-testing)** - Тестирование настроек безопасности для разных окружений
+- **[Performance Metrics](PERFORMANCE_METRICS.md)** - Performance metrics monitoring system
+- **[Mobile Testing Guide](MOBILE_TESTING_GUIDE.md)** - Mobile device optimization testing guide
+- **[Configuration Testing](#configuration-testing)** - Security settings testing for different environments
 
 ### 📋 Maintenance
-- **[Changelog](CHANGELOG.md)** - Отслеживание версий и изменений
-- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация по исправлениям
+- **[Changelog](CHANGELOG.md)** - Version and change tracking
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Technical documentation for fixes
 
 ### 📁 Documentation Structure
 ```
 docs/
-├── README.md (основная документация + Performance Testing)
-├── CHANGELOG.md (история изменений + новая документация)
-├── IMPLEMENTATION_PLAN.md (план реализации + Performance Requirements)
-├── PERFORMANCE_METRICS.md (система метрик + инструкции по измерению)
-├── MOBILE_TESTING_GUIDE.md (тестирование + требования)
-├── OPTIMIZATION_PLAN.md (план оптимизации)
-├── docs/
-│   ├── database.md
-│   ├── deployment_guide.md  
-│   └── environment_setup.md
-└── scripts/
-    └── performance-check.sh (автоматизация тестирования)
+├── README.md (main documentation + Performance Testing)
+├── CHANGELOG.md (change history + new documentation)
+├── IMPLEMENTATION_PLAN.md (implementation plan + Performance Requirements)
+├── PERFORMANCE_METRICS.md (metrics system + measurement instructions)
+├── MOBILE_TESTING_GUIDE.md (testing + requirements)
+├── OPTIMIZATION_PLAN.md (optimization plan)
+├── database.md
+├── deployment_guide.md  
+└── environment_setup.md
 ```
 
 ## Technical Details
 
-### Site speed
+### Site Speed
 - Using fast CSS
 - HTTP/2
 - Caching
@@ -288,147 +285,146 @@ with app.app_context():
 
 ---
 
-## 🔗 См. также
+## 🔗 See Also
 
-- **[Environment Setup](docs/environment_setup.md)** - Детальная настройка окружения для разработки и продакшена
-- **[Deployment Guide](docs/deployment_guide.md)** - Пошаговое руководство по деплою
-- **[Database Documentation](docs/database.md)** - Подробная документация по базе данных и структуре таблиц
-- **[Migration Instructions](MIGRATION_INSTRUCTIONS.md)** - Инструкции по миграции базы данных на продакшене
-- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Техническая документация и план исправлений
-- **[Changelog](CHANGELOG.md)** - История версий и обновлений проекта
+- **[Environment Setup](environment_setup.md)** - Detailed environment setup for development and production
+- **[Deployment Guide](deployment_guide.md)** - Step-by-step deployment guide
+- **[Database Documentation](database.md)** - Detailed database documentation and table structure
+- **[Migration Instructions](MIGRATION_INSTRUCTIONS.md)** - Database migration instructions for production
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - Technical documentation and implementation plan
+- **[Changelog](CHANGELOG.md)** - Project version history and updates
 
 ## Performance Testing & Monitoring
 
-### Измерение производительности сайта
+### Website Performance Measurement
 
-**ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ:** После каждого изменения кода, влияющего на производительность, необходимо измерить метрики производительности и документировать результаты.
+**MANDATORY REQUIREMENT:** After each code change affecting performance, performance metrics must be measured and documented.
 
-#### Инструменты для измерения:
+#### Measurement Tools:
 
 1. **Chrome DevTools Lighthouse**
    ```bash
-   # В Chrome DevTools:
+   # In Chrome DevTools:
    # F12 → Lighthouse → Performance → Mobile → Generate Report
    ```
 
 2. **PageSpeed Insights API**
    ```bash
-   # Команда для быстрой проверки
+   # Command for quick check
    curl "https://www.googleapis.com/pagespeed/v5/runPagespeed?url=https://your-site.com&category=performance&strategy=mobile"
    ```
 
-3. **Web Vitals Monitoring (встроенный)**
+3. **Web Vitals Monitoring (built-in)**
    ```javascript
-   // В консоли браузера
+   // In browser console
    WebVitals.getMetrics();
    ```
 
-#### Ключевые метрики для отслеживания:
+#### Key Metrics to Track:
 
 - **Performance Score:** > 90 (mobile), > 95 (desktop)
 - **LCP (Largest Contentful Paint):** < 2.5s
 - **FID (First Input Delay):** < 100ms  
 - **CLS (Cumulative Layout Shift):** < 0.1
 
-#### Workflow после изменений:
+#### Workflow After Changes:
 
-1. **Сделать изменения в коде**
-2. **Запустить локальное тестирование:**
+1. **Make code changes**
+2. **Run local testing:**
    - Chrome DevTools → Performance
-   - Network tab для анализа загрузки ресурсов
-3. **Измерить Lighthouse scores** (до и после)
-4. **Проверить Web Vitals** в консоли браузера
-5. **Документировать результаты** в [Performance Metrics](PERFORMANCE_METRICS.md)
-6. **При деплое на production** - повторить измерения через PageSpeed Insights
+   - Network tab for resource loading analysis
+3. **Measure Lighthouse scores** (before and after)
+4. **Check Web Vitals** in browser console
+5. **Document results** in [Performance Metrics](PERFORMANCE_METRICS.md)
+6. **When deploying to production** - repeat measurements via PageSpeed Insights
 
-Подробные инструкции см. в [Mobile Testing Guide](MOBILE_TESTING_GUIDE.md).
+Detailed instructions see in [Mobile Testing Guide](MOBILE_TESTING_GUIDE.md).
 
 ## Configuration Testing
 
-### Тестирование настроек безопасности для разных окружений
+### Security Settings Testing for Different Environments
 
-Приложение использует разные настройки безопасности для development (HTTP) и production (HTTPS) окружений. Критически важно проверять корректность этих настроек.
+The application uses different security settings for development (HTTP) and production (HTTPS) environments. It's critical to verify the correctness of these settings.
 
-#### Быстрые тесты
+#### Quick Tests
 
 ```bash
-# Запуск автоматизированных тестов
+# Run automated tests
 python -m pytest tests/test_app.py::test_configuration_environments -v
 python -m pytest tests/test_app.py::test_security_settings_logic -v
 
-# Проверка всех тестов
+# Check all tests
 python -m pytest tests/test_app.py -v
 ```
 
-#### Ручная проверка конфигурации
-
+#### Manual Configuration Check
 ```bash
-# Development окружение (HTTP)
+# Development environment (HTTP)
 python -c "
 from config.config import DevelopmentConfig
 config = DevelopmentConfig()
 print('Development - USE_HTTPS:', config.USE_HTTPS)
 print('Development - SESSION_COOKIE_SECURE:', config.SESSION_COOKIE_SECURE)
 print('Development - REMEMBER_COOKIE_SECURE:', config.REMEMBER_COOKIE_SECURE)
-print('✅ Для development secure cookies должны быть ВЫКЛЮЧЕНЫ')
+print('✅ For development secure cookies should be DISABLED')
 "
 
-# Production окружение (HTTPS)  
+# Production environment (HTTPS)  
 python -c "
 from config.config import ProductionConfig
 config = ProductionConfig()
 print('Production - USE_HTTPS:', config.USE_HTTPS)
 print('Production - SESSION_COOKIE_SECURE:', config.SESSION_COOKIE_SECURE)
 print('Production - REMEMBER_COOKIE_SECURE:', config.REMEMBER_COOKIE_SECURE)
-print('✅ Для production secure cookies должны быть ВКЛЮЧЕНЫ')
+print('✅ For production secure cookies should be ENABLED')
 "
 
-# Проверка ProxyFix совместимости
+# Check ProxyFix compatibility
 python -c "
 from config.config import ProductionConfig
 config = ProductionConfig()
 print('Has PREFERRED_URL_SCHEME:', hasattr(config, 'PREFERRED_URL_SCHEME'))
-print('✅ PREFERRED_URL_SCHEME должно быть False (не установлено)')
+print('✅ PREFERRED_URL_SCHEME should be False (not set)')
 "
 ```
 
-#### Проверка в разных окружениях
+#### Check in Different Environments
 
 ```bash
-# Тест development
+# Test development
 export FLASK_ENV=development
 python -c "from config.config import get_config; print('Active config:', get_config().__name__)"
 
-# Тест production
+# Test production
 export FLASK_ENV=production  
 python -c "from config.config import get_config; print('Active config:', get_config().__name__)"
 
-# Тест testing
+# Test testing
 export FLASK_ENV=testing
 python -c "from config.config import get_config; print('Active config:', get_config().__name__)"
 ```
 
-#### Проверка в браузере (production)
+#### Browser Check (production)
 
-1. **Откройте Developer Tools** (F12)
-2. **Перейдите на вкладку Application → Cookies**
-3. **Проверьте флаги cookies:**
-   - ✅ `Secure` - должен быть включен только для HTTPS production
-   - ✅ `HttpOnly` - должен быть включен всегда (защита от XSS)
+1. **Open Developer Tools** (F12)
+2. **Go to Application → Cookies tab**
+3. **Check cookie flags:**
+   - ✅ `Secure` - should be enabled only for HTTPS production
+   - ✅ `HttpOnly` - should be enabled always (XSS protection)
 
-#### Ожидаемые результаты:
+#### Expected Results:
 
-| Окружение | USE_HTTPS | SESSION_COOKIE_SECURE | REMEMBER_COOKIE_SECURE |
-|-----------|-----------|---------------------|----------------------|
+| Environment | USE_HTTPS | SESSION_COOKIE_SECURE | REMEMBER_COOKIE_SECURE |
+|-------------|-----------|---------------------|----------------------|
 | Development | `False` | `False` | `False` |
 | Production | `True` | `True` | `True` |
-| Testing | `False` | (наследует от Config) | (наследует от Config) |
+| Testing | `False` | (inherits from Config) | (inherits from Config) |
 
-#### Устранение проблем:
+#### Troubleshooting:
 
-**Если в development secure cookies включены:**
+**If secure cookies are enabled in development:**
 ```bash
-# Проверьте, что используется правильная конфигурация
+# Check that correct configuration is used
 python -c "
 import os
 print('FLASK_ENV:', os.getenv('FLASK_ENV', 'development'))
@@ -437,9 +433,9 @@ print('Config class:', get_config().__name__)
 "
 ```
 
-**Если в production secure cookies выключены:**
+**If secure cookies are disabled in production:**
 ```bash
-# Проверьте настройки production
+# Check production settings
 python -c "
 from config.config import ProductionConfig
 config = ProductionConfig()
@@ -448,6 +444,4 @@ print('SESSION_COOKIE_SECURE:', config.SESSION_COOKIE_SECURE)
 "
 ```
 
-Детальные инструкции и примеры см. в [Implementation Plan](IMPLEMENTATION_PLAN.md#решена-условная-логика-настроек-безопасности-для-разных-окружений).
-
-
+See also detailed instructions in the Implementation Plan.
