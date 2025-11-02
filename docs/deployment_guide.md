@@ -1,589 +1,577 @@
 # Deployment Guide
 
-## Overview
-This document provides comprehensive instructions for deploying the Třešinky Cetechovice web application to production environments.
-
-## 🚀 Production Deployment
-
-### Prerequisites
-- **Ubuntu 20.04+** server with root access
-- **Domain name** pointing to server IP
-- **SSL certificate** (Let's Encrypt recommended)
-- **Docker & Docker Compose** installed
-- **Nginx** for reverse proxy
-
-### Server Requirements
-- **CPU:** 2+ cores
-- **RAM:** 4GB+ (8GB recommended)
-- **Storage:** 20GB+ SSD
-- **Network:** 100Mbps+ connection
-
-## 📋 Deployment Steps
-
-### Step 1: Server Preparation
-
-#### Update System
-```bash
-# Update package lists
-sudo apt-get update && sudo apt-get upgrade -y
-
-# Install essential packages
-sudo apt-get install -y curl wget git unzip software-properties-common
-```
-
-#### Install Docker
-```bash
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-# Verify installation
-docker --version
-docker compose version
-```
-
-#### Install Nginx
-```bash
-# Install Nginx
-sudo apt-get install -y nginx
-
-# Start and enable Nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
-
-# Check status
-sudo systemctl status nginx
-```
-
-### Step 2: Application Deployment
-
-#### Clone Repository
-```bash
-# Navigate to web directory
-cd /var/www
-
-# Clone repository
-sudo git clone https://github.com/your-username/tresinky-web.git
-sudo chown -R $USER:$USER tresinky-web
-cd tresinky-web
-```
-
-#### Configure Environment
-```bash
-# Copy production configuration
-cp .env.production .env
-
-# Edit configuration
-nano .env
-```
-
-#### Production Environment Variables
-```bash
-# .env.production
-FLASK_ENV=production
-SECRET_KEY=your-super-secret-production-key
-DATABASE_URL=sqlite:///instance/tresinky.db
-UPLOAD_FOLDER=static/uploads
-MAX_CONTENT_LENGTH=400000000
-DEBUG=False
-```
-
-#### Initialize Database
-```bash
-# Create necessary directories
-mkdir -p instance logs static/uploads
-
-# Initialize database
-python3 -c "from app import app, db; app.app_context().push(); db.create_all()"
-```
-
-### Step 3: Docker Configuration
-
-#### Build Application
-```bash
-# Build Docker image
-docker compose build
-
-# Start application
-docker compose up -d
-
-# Check status
-docker compose ps
-```
-
-#### Verify Application
-```bash
-# Check application logs
-docker compose logs web
-
-# Test application
-curl -I http://localhost:5000
-```
-
-### Step 4: Nginx Configuration
-
-#### Create Nginx Configuration
-```bash
-# Create site configuration
-sudo nano /etc/nginx/sites-available/tresinky
-```
-
-#### Nginx Configuration
-```nginx
-# /etc/nginx/sites-available/tresinky
-upstream web {
-    server localhost:5000;
-}
-
-server {
-    listen 80;
-    server_name your-domain.com www.your-domain.com;
-    
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com www.your-domain.com;
-    
-    # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    
-    # SSL Security
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 10m;
-    
-    # Security Headers
-    add_header X-Frame-Options DENY;
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    
-    # Main application
-    location / {
-        proxy_pass http://web;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_redirect off;
-    }
-    
-    # Static files
-    location /static/ {
-        alias /var/www/tresinky-web/static/;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        add_header Vary Accept-Encoding;
-        
-        # Enable gzip compression
-        gzip on;
-        gzip_types text/css application/javascript image/svg+xml;
-    }
-    
-    # Upload files
-    location /uploads/ {
-        alias /var/www/tresinky-web/static/uploads/;
-        expires 30d;
-        add_header Cache-Control "public";
-    }
-    
-    # Deny access to sensitive files
-    location ~ /\. {
-        deny all;
-    }
-    
-    location ~ \.(env|log|db)$ {
-        deny all;
-    }
-}
-```
-
-#### Enable Site
-```bash
-# Enable site
-sudo ln -s /etc/nginx/sites-available/tresinky /etc/nginx/sites-enabled/
-
-# Remove default site
-sudo rm /etc/nginx/sites-enabled/default
-
-# Test configuration
-sudo nginx -t
-
-# Reload Nginx
-sudo systemctl reload nginx
-```
-
-### Step 5: SSL Certificate
-
-#### Install Certbot
-```bash
-# Install Certbot
-sudo apt-get install -y certbot python3-certbot-nginx
-```
-
-#### Obtain SSL Certificate
-```bash
-# Obtain certificate
-sudo certbot --nginx -d your-domain.com -d www.your-domain.com
-
-# Test automatic renewal
-sudo certbot renew --dry-run
-```
-
-#### Setup Auto-Renewal
-```bash
-# Add to crontab
-sudo crontab -e
-
-# Add this line
-0 12 * * * /usr/bin/certbot renew --quiet
-```
-
-### Step 6: Application Optimization
-
-#### Configure Logging
-```bash
-# Create log rotation
-sudo nano /etc/logrotate.d/tresinky
-```
-
-#### Log Rotation Configuration
-```
-/var/www/tresinky-web/logs/*.log {
-    daily
-    missingok
-    rotate 52
-    compress
-    delaycompress
-    notifempty
-    create 644 www-data www-data
-    postrotate
-        docker compose restart web
-    endscript
-}
-```
-
-#### Setup Monitoring
-```bash
-# Install monitoring tools
-sudo apt-get install -y htop iotop nethogs
-
-# Create monitoring script
-nano /var/www/tresinky-web/scripts/monitor.sh
-```
-
-#### Monitoring Script
-```bash
-#!/bin/bash
-# monitor.sh
-
-echo "=== System Status ==="
-echo "Date: $(date)"
-echo "Uptime: $(uptime)"
-echo ""
-
-echo "=== Docker Status ==="
-docker compose ps
-echo ""
-
-echo "=== Application Status ==="
-curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" https://your-domain.com
-echo ""
-
-echo "=== Disk Usage ==="
-df -h
-echo ""
-
-echo "=== Memory Usage ==="
-free -h
-echo ""
-
-echo "=== Application Logs (Last 10 lines) ==="
-tail -10 /var/www/tresinky-web/logs/app.log
-```
-
-#### Make Script Executable
-```bash
-chmod +x /var/www/tresinky-web/scripts/monitor.sh
-```
-
-## 🔄 Deployment Updates
-
-### Update Process
-```bash
-# Navigate to application directory
-cd /var/www/tresinky-web
-
-# Pull latest changes
-git pull origin main
-
-# Backup database
-cp instance/tresinky.db instance/tresinky_backup_$(date +%Y%m%d_%H%M%S).db
-
-# Rebuild application
-docker compose down
-docker compose build
-docker compose up -d
-
-# Verify deployment
-curl -I https://your-domain.com
-```
-
-### Rollback Process
-```bash
-# Stop application
-docker compose down
-
-# Restore previous version
-git checkout HEAD~1
-
-# Restore database backup
-cp instance/tresinky_backup_YYYYMMDD_HHMMSS.db instance/tresinky.db
-
-# Restart application
-docker compose up -d
-```
-
-## 📊 Performance Optimization
-
-### Nginx Optimization
-```nginx
-# Add to nginx configuration
-worker_processes auto;
-worker_connections 1024;
-
-# Enable gzip compression
-gzip on;
-gzip_vary on;
-gzip_min_length 1024;
-gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
-
-# Enable caching
-location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|webp)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-```
-
-### Docker Optimization
-```yaml
-# docker-compose.yml optimization
-version: '3.8'
-services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./instance:/app/instance
-      - ./logs:/app/logs
-    environment:
-      - FLASK_ENV=production
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
-```
-
-## 🚨 Security Configuration
-
-### Firewall Setup
-```bash
-# Install UFW
-sudo apt-get install -y ufw
-
-# Configure firewall
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow ssh
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw enable
-```
-
-### Application Security
-```bash
-# Set proper permissions
-sudo chown -R www-data:www-data /var/www/tresinky-web
-sudo chmod -R 755 /var/www/tresinky-web
-sudo chmod 600 /var/www/tresinky-web/.env
-sudo chmod 600 /var/www/tresinky-web/instance/tresinky.db
-```
-
-### Database Security
-```bash
-# Backup database regularly
-sudo crontab -e
-
-# Add backup job
-0 2 * * * /var/www/tresinky-web/scripts/backup_database.sh
-```
-
-## 📈 Monitoring & Maintenance
-
-### Health Checks
-```bash
-# Create health check script
-nano /var/www/tresinky-web/scripts/health_check.sh
-```
-
-#### Health Check Script
-```bash
-#!/bin/bash
-# health_check.sh
-
-# Check application status
-if curl -s -f https://your-domain.com > /dev/null; then
-    echo "Application: OK"
-else
-    echo "Application: FAILED"
-    # Send alert email
-    echo "Application down at $(date)" | mail -s "Alert: Application Down" admin@your-domain.com
-fi
-
-# Check disk space
-DISK_USAGE=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
-if [ $DISK_USAGE -gt 80 ]; then
-    echo "Disk usage: WARNING ($DISK_USAGE%)"
-else
-    echo "Disk usage: OK ($DISK_USAGE%)"
-fi
-
-# Check memory usage
-MEMORY_USAGE=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
-if [ $MEMORY_USAGE -gt 80 ]; then
-    echo "Memory usage: WARNING ($MEMORY_USAGE%)"
-else
-    echo "Memory usage: OK ($MEMORY_USAGE%)"
-fi
-```
-
-### Log Monitoring
-```bash
-# Monitor error logs
-tail -f /var/www/tresinky-web/logs/errors.log
-
-# Monitor application logs
-tail -f /var/www/tresinky-web/logs/app.log
-
-# Monitor Nginx logs
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
-```
-
-## 🚨 Troubleshooting
-
-### Common Issues
-
-#### Application Not Starting
-```bash
-# Check Docker logs
-docker compose logs web
-
-# Check application status
-docker compose ps
-
-# Restart application
-docker compose restart web
-```
-
-#### Database Issues
-```bash
-# Check database file
-ls -la /var/www/tresinky-web/instance/tresinky.db
-
-# Fix permissions
-sudo chown www-data:www-data /var/www/tresinky-web/instance/tresinky.db
-sudo chmod 664 /var/www/tresinky-web/instance/tresinky.db
-```
-
-#### Nginx Issues
-```bash
-# Check Nginx status
-sudo systemctl status nginx
-
-# Test configuration
-sudo nginx -t
-
-# Check error logs
-sudo tail -f /var/log/nginx/error.log
-```
-
-#### SSL Issues
-```bash
-# Check certificate status
-sudo certbot certificates
-
-# Renew certificate
-sudo certbot renew
-
-# Test SSL
-openssl s_client -connect your-domain.com:443
-```
-
-### Performance Issues
-
-#### High Memory Usage
-```bash
-# Check memory usage
-free -h
-docker stats
-
-# Restart application
-docker compose restart web
-```
-
-#### High CPU Usage
-```bash
-# Check CPU usage
-top
-htop
-
-# Check Docker resource usage
-docker stats
-```
-
-#### Slow Response Times
-```bash
-# Check Nginx logs
-sudo tail -f /var/log/nginx/access.log
-
-# Test response time
-curl -w "@curl-format.txt" -o /dev/null -s https://your-domain.com
-```
-
-## 📚 Additional Resources
-
-### Documentation
-- [Environment Setup](environment_setup.md) - Development environment
-- [Database Documentation](database.md) - Database configuration
-- [Performance Metrics](PERFORMANCE_METRICS.md) - Performance monitoring
-
-### Scripts
-- `scripts/setup_production.sh` - Production setup script
-- `scripts/backup_database.sh` - Database backup script
-- `scripts/monitor.sh` - System monitoring script
-
-### Support
-- Check application logs for error details
-- Review system logs for infrastructure issues
-- Contact development team for deployment support
+🏠 [Main](../README.md) | 📋 [Changelog](../CHANGELOG.md) | 💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md) | 🚀 [Environment Setup](environment_setup.md)
 
 ---
 
-*Last updated: [Current Date]*
-*Next review: [Next Review Date]*
+## Prerequisites
+
+1. Docker and Docker Compose installed
+2. Git installed
+3. Access to the server
+4. Domain name configured
+5. SSL certificates (self signed for development; for production SSL certificates will be managed by Let's Encrypt)
+
+## Initial Setup
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/your-username/Tresinky_web.git
+   cd Tresinky_web
+   ```
+
+## Development Deployment
+
+1. Generate self signed SSL certificate for development:
+
+   ```bash
+   ./scripts/generate_ssl.sh 
+   ```
+
+2. Switch to development environment:
+
+   ```bash
+   ./scripts/switch_env.sh development
+   ```
+
+3. Start the services:
+
+   ```bash
+   docker compose up -d
+   ```text
+      or 
+   ```bash
+   flask run --host=0.0.0.0 --port=5000 
+   ```
+
+4. Access the application:
+   - Web: <http://localhost:5000>
+   - Admin: <http://localhost:5000/admin>
+
+## Production Deployment
+
+1. SSL certificates will be managed by Let's Encrypt.
+
+2. Switch to production environment:
+
+   ```bash
+   ./scripts/switch_env.sh production
+   ```
+
+3. Setup production environment:
+
+   ```bash
+   ./scripts/setup_production.sh production
+   ```
+
+4. Start the services:
+
+   ```bash
+   docker compose up -d
+   ```
+
+5. Verify the deployment:
+   - Check response: `curl -I http://sad-tresinky-cetechovice.cz`
+   - Check response: `curl -I https://sad-tresinky-cetechovice.cz`
+   - Check application logs: `docker compose logs web`
+   - Check Nginx logs: `docker compose logs nginx`
+   - Test HTTPS: <https://sad-tresinky-cetechovice.cz>
+
+## Environment Configuration
+
+### Overview
+
+The application uses a sophisticated environment configuration system that separates settings between development and production environments while maintaining flexibility and security.
+
+### Environment Files Structure
+
+```text
+.
+├── .env                          # Symlink to current environment
+├── .env.development             # Development settings
+├── .env.production              # Production settings  
+├── .env.nginx.development       # Nginx-specific dev settings
+├── .env.nginx.production        # Nginx-specific prod settings
+└── .env.example                 # Template file
+```
+
+### Environment Detection
+
+The system automatically detects the current environment using the `.env` symlink:
+
+```bash
+# Check current environment
+ls -la .env
+# Output examples:
+# lrwxr-xr-x .env -> .env.development  # Development
+# lrwxr-xr-x .env -> .env.production   # Production
+```
+
+### Configuration Separation
+
+#### Web Application (`web` service)
+
+Uses complete environment files with all application settings:
+
+- **Development**: `.env.development`
+- **Production**: `.env.production`
+
+**Key settings:**
+
+- `VIRTUAL_HOST` - Domain configuration for nginx-proxy
+- `LETSENCRYPT_HOST` - SSL certificate domains
+- `MAIL_*` - Email configuration
+- `SECRET_KEY` - Application security
+- `DEBUG` - Debug mode
+
+#### Nginx Services (`nginx-proxy`, `nginx-letsencrypt`)
+
+Uses specialized environment files **without** `VIRTUAL_HOST` to prevent upstream conflicts:
+
+- **Development**: `.env.nginx.development`
+- **Production**: `.env.nginx.production`
+
+**Key settings:**
+
+- `DEFAULT_HOST` - Default domain
+- `ALLOW_SELF_SIGNED` - SSL certificate validation
+- `SSL_MODE` - SSL configuration mode
+- `LETSENCRYPT_EMAIL` - Certificate registration email
+
+### Development vs Production Differences
+
+| Setting | Development | Production | Purpose |
+|---------|-------------|------------|---------|
+| `VIRTUAL_HOST` | `localhost, sad-tresinky-cetechovice.cz` | `sad-tresinky-cetechovice.cz` | Proxy domains |
+| `DEFAULT_HOST` | `localhost` | `sad-tresinky-cetechovice.cz` | Default SSL domain |
+| `ALLOW_SELF_SIGNED` | `true` | `false` | SSL certificate validation |
+| `SSL_MODE` | `development` | `production` | SSL configuration |
+| `DEBUG` | `true` | `false` | Debug mode |
+| `ADMIN_EMAIL` | `stashok@speakasap.com` | `stashok@speakasap.com` | Admin notifications |
+
+### Environment Switching
+
+```bash
+# Switch to development
+./scripts/switch_env.sh development
+
+# Switch to production  
+./scripts/switch_env.sh production
+
+# Verify current environment
+readlink .env
+```
+
+### Critical Configuration Notes
+
+1. **VIRTUAL_HOST Separation**: Only the `web` service should have `VIRTUAL_HOST` variable. nginx services must not have it to prevent upstream conflicts.
+
+2. **Email Configuration**: Same SMTP settings work for both environments, but admin emails differ.
+
+3. **SSL Configuration**: Development uses self-signed certificates, production uses Let's Encrypt.
+
+4. **Domain Configuration**: Development supports both localhost and domain access, production only domain.
+
+### Configuration Validation
+
+```bash
+# Check nginx upstream (should show only web container)
+docker compose exec nginx-proxy cat /etc/nginx/conf.d/default.conf | grep -A5 "upstream"
+
+# Expected output:
+# upstream sad-tresinky-cetechovice.cz {
+#     server 172.18.0.2:5000;  # Only web container
+#     keepalive 2;
+# }
+```
+
+### Troubleshooting Configuration Issues
+
+#### Contact Form Not Working
+
+If POST requests don't reach Flask:
+
+1. **Check nginx upstream**:
+
+   ```bash
+   docker compose exec nginx-proxy cat /etc/nginx/conf.d/default.conf | grep -A10 "upstream"
+   ```
+
+2. **If multiple servers in upstream**:
+
+   ```bash
+   # Fix nginx configuration
+   ./scripts/fix_nginx_upstream.sh
+   ```
+
+3. **Verify configuration files**:
+
+   ```bash
+   # Check that nginx services don't have VIRTUAL_HOST
+   docker compose exec nginx-proxy env | grep VIRTUAL_HOST  # Should be empty
+   docker compose exec web env | grep VIRTUAL_HOST          # Should show domain
+   ```
+
+## Database Management
+
+### Backup
+
+```bash
+# Backup database
+cp instance/tresinky.db instance/tresinky.db.backup
+
+# Backup with timestamp
+cp instance/tresinky.db instance/tresinky.db.$(date +%Y%m%d_%H%M%S)
+```
+
+### Restore
+
+```bash
+# Restore from backup
+cp instance/tresinky.db.backup instance/tresinky.db
+```
+
+## Gallery Content Management
+
+### Gallery Update Process (Dev → Prod)
+
+**Step-by-step workflow for updating gallery content safely:**
+
+#### Step 1: Upload Content on Development
+
+```bash
+# Access development upload interface
+http://127.0.0.1:5000/admin/upload
+```
+
+1. Upload all new albums and images through the web interface
+2. Verify all uploads are successful and properly processed
+3. Check gallery display and functionality
+4. Ensure all metadata is correctly set
+
+#### Step 2: Synchronize Database
+
+```bash
+# Copy database from development to production
+scp instance/tresinky.db root@104.248.102.172:/root/Tresinky_web/instance/tresinky.db
+```
+
+#### Step 3: Synchronize Gallery Files (if needed)
+
+```bash
+# Sync gallery images from dev to prod
+rsync -avz --delete static/images/gallery/ root@104.248.102.172:/root/Tresinky_web/static/images/gallery/
+
+# Alternative: Create and transfer archive
+tar -czf gallery_backup_$(date +%Y%m%d_%H%M%S).tar.gz static/images/gallery/
+scp gallery_backup_*.tar.gz root@104.248.102.172:/root/Tresinky_web/
+```
+
+#### Step 4: Restart Production Application
+
+```bash
+# On production server
+cd /root/Tresinky_web
+docker compose down
+docker compose up -d
+```
+
+#### Step 5: Verify Production
+
+1. Check gallery at production URL
+2. Verify all albums and images display correctly
+3. Test admin interface functionality
+4. Check logs for any errors
+
+### Benefits of This Approach
+
+- **Reliability**: Dev environment ensures proper processing
+- **Safety**: Database contains all metadata and relationships
+- **Consistency**: Automatic synchronization via `sync_gallery_with_disk()`
+- **Rollback**: Easy to restore from database backups
+- **Quality Control**: Visual verification before production deployment
+
+### Important Notes
+
+- Always use development environment for initial uploads
+- Database synchronization includes all image metadata and album structures
+- File synchronization may be needed if processing differs between environments
+- The application automatically syncs database with filesystem on startup
+- Random album previews will be automatically generated from available images
+
+## SSL Certificate Management
+
+### Development
+
+- Use self-signed certificates generated by `scripts/generate_ssl.sh`
+- Certificates stored in `ssl/` directory
+
+### Production
+
+1. SSL certificates will be managed by Let's Encrypt.
+2. Update Nginx configuration if needed
+
+## Monitoring
+
+### Logs
+
+```bash
+# Application logs
+docker compose logs web
+
+# Nginx logs
+docker compose logs nginx
+
+# Follow logs
+docker compose logs -f web
+```
+
+### Health Checks
+
+1. Application: <http://localhost:5000/health>
+2. Nginx: <http://localhost/health>
+
+## Updates and Maintenance
+
+### Application Updates
+
+1. Pull latest changes:
+
+   ```bash
+   git pull origin main
+   ```
+
+2. Rebuild and restart:
+
+   ```bash
+   docker compose down
+   docker compose up -d --build
+   ```
+
+### Database Updates
+
+1. Backup current database
+2. Apply migrations if needed
+3. Verify data integrity
+
+### SSL Certificate Renewal
+
+1. Reload Nginx:
+
+   ```bash
+   docker compose restart nginx
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+1. Application Not Starting
+
+   ```bash
+   # Check logs
+   docker compose logs web
+   
+   # Check container status
+   docker compose ps
+   ```
+
+2. Nginx Issues
+
+   ```bash
+   # Check Nginx configuration
+   docker compose exec nginx nginx -t
+   
+   # Check Nginx logs
+   docker compose logs nginx
+   ```
+
+3. Database Issues
+
+   ```bash
+   # Check database file
+   ls -l instance/tresinky.db
+   
+   # Check database logs
+   docker compose logs db
+   ```
+
+4. SSL Certificate Issues
+
+   ```bash
+   # Check certificate status
+   docker compose exec nginx-proxy ls -la /etc/nginx/certs/
+   
+   # Renew certificates
+   docker compose restart nginx-letsencrypt
+   ```
+
+5. Contact Form Issues
+
+   ```bash
+   # Check if POST requests reach Flask
+   docker compose logs web | grep -i "POST\|contact" | tail -10
+   
+   # Check nginx upstream configuration  
+   docker compose exec nginx-proxy cat /etc/nginx/conf.d/default.conf | grep -A10 "upstream"
+   
+   # Fix nginx upstream if multiple servers present
+   ./scripts/fix_nginx_upstream.sh
+   ```
+
+6. Email Issues
+
+   ```bash
+   # Test SMTP connection
+   docker compose exec web python3 -c "
+   import smtplib, os
+   try:
+       server = smtplib.SMTP(os.getenv('MAIL_SERVER'), int(os.getenv('MAIL_PORT')))
+       server.starttls()
+       server.login(os.getenv('MAIL_USERNAME'), os.getenv('MAIL_PASSWORD'))
+       print('✅ SMTP connection successful')
+       server.quit()
+   except Exception as e:
+       print(f'❌ SMTP error: {e}')
+   "
+   ```
+
+### Environment Configuration Issues
+
+1. **Wrong Environment Detected**:
+
+   ```bash
+   # Check symlink
+   ls -la .env
+   
+   # Fix symlink
+   ./scripts/switch_env.sh production  # or development
+   ```
+
+2. **nginx-proxy Multiple Upstreams**:
+   - **Symptom**: Contact form submissions don't work
+   - **Cause**: nginx-proxy sees multiple containers with VIRTUAL_HOST
+   - **Fix**: Run `./scripts/fix_nginx_upstream.sh`
+
+3. **SSL Certificate Problems**:
+
+   ```bash
+   # Development - use self-signed
+   ./scripts/generate_ssl.sh
+   
+   # Production - check Let's Encrypt
+   docker compose logs nginx-letsencrypt
+   ```
+
+### Performance Issues
+
+1. Check resource usage:
+
+   ```bash
+   docker stats
+   ```
+
+2. Monitor logs for errors:
+
+   ```bash
+   docker compose logs -f
+   ```
+
+3. Check Nginx access logs:
+
+   ```bash
+   docker compose exec nginx tail -f /var/log/nginx/access.log
+   ```
+
+## Security Checklist
+
+1. Environment Variables
+   - [ ] Strong secret keys
+   - [ ] Production settings
+   - [ ] Secure database credentials
+
+2. SSL/TLS
+   - [ ] Valid certificates
+   - [ ] Proper configuration
+   - [ ] Regular renewal
+
+3. Nginx
+   - [ ] Security headers
+   - [ ] SSL configuration
+   - [ ] Access restrictions
+   - [ ] HTTP2 support
+
+4. Application
+   - [ ] Debug mode disabled
+   - [ ] Secure session settings
+   - [ ] Input validation
+
+## Backup and Recovery
+
+### Regular Backups
+
+1. Database
+2. SSL certificates
+3. Configuration files
+4. Uploaded gallery files
+
+### Recovery Procedure
+
+1. Stop services
+2. Restore backups
+3. Verify configuration
+4. Start services
+
+## Scaling
+
+### Vertical Scaling
+
+1. Increase container resources
+2. Optimize Nginx configuration
+3. Enable caching
+
+### Horizontal Scaling
+
+1. Load balancer setup
+2. Database replication
+3. Session management
+
+## Maintenance Schedule
+
+### Daily
+
+- Monitor logs
+- Check application status
+- Verify backups
+
+### Weekly
+
+- Review security logs
+- Check SSL certificates
+- Monitor performance
+
+### Monthly
+
+- Update dependencies
+- Review security settings
+- Optimize configuration
+- Check disk space
+
+## Support
+
+For issues and support:
+
+1. Check documentation
+2. Review logs
+3. Contact development team
+
+---
+
+## 🔗 См. также
+
+- **🏠 [Главная](../README.md)** - Основная документация проекта
+- **🚀 [Environment Setup](environment_setup.md)** - Детальная настройка окружения
+- **💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md)** - Техническая документация
+- **📋 [Changelog](../CHANGELOG.md)** - История изменений проекта
+- **⬅️ [Назад: Environment Setup](environment_setup.md)** | **➡️ [Далее: Changelog](../CHANGELOG.md)**

@@ -1,472 +1,576 @@
-# Environment Setup
+# Environment Setup and Configuration
+
+🏠 [Main](../README.md) | 📋 [Changelog](../CHANGELOG.md) | 💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md) | 🌐 [Deployment Guide](deployment_guide.md)
+
+---
 
 ## Overview
-This document provides detailed instructions for setting up the development and production environments for the Třešinky Cetechovice web application.
 
-## 🚀 Development Environment
+The application supports two environments: development and production. Each environment has its own configuration settings, security measures, and deployment requirements.
 
-### Prerequisites
-- **Python 3.8+** - Required for Flask application
-- **Git** - For version control
-- **Docker & Docker Compose** - For containerized development
-- **ImageMagick** - For image processing
-- **heif-convert** - For HEIC image support
+## Environment Configuration
 
-### Installation Steps
+### Environment File Management
 
-#### 1. Clone Repository
-```bash
-git clone https://github.com/your-username/tresinky-web.git
-cd tresinky-web
+Для упрощения разработки и тестирования environment разделен на development и production. Для определения, на каком environment что работает, используется файл `.env`, который является символической ссылкой на `.env.development` или на `.env.production`.
+
+**Структура конфигурационных файлов:**
+
+```text
+.env                    # Символическая ссылка на активное окружение
+.env.development        # Настройки для разработки
+.env.production         # Настройки для продакшена
 ```
 
-#### 2. Install Python Dependencies
-```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+**Механизм работы:**
 
-# Install dependencies
-pip install -r requirements.txt
+- `.env` - это символическая ссылка, которая указывает на актуальный файл конфигурации
+- В development: `.env` → `.env.development`
+- В production: `.env` → `.env.production`
+
+**Переменные окружения, которые должны различаться:**
+
+Все переменные, которые могут отличаться на development и production должны быть отражены в соответствующих файлах. Например:
+
+- **Конфигурация SSL и дебагинга**: `FLASK_DEBUG`, `USE_HTTPS`
+- **Пути к базам данных**: `DATABASE_URL`
+- **Пароли и секретные ключи**: `SECRET_KEY`
+- **Домены и хосты**: `DOMAIN`, `VIRTUAL_HOST`
+- **SSL сертификаты**: `LETSENCRYPT_HOST`, `LETSENCRYPT_EMAIL`
+- **Настройки безопасности**: различные уровни безопасности для разных окружений
+
+### Nginx Configuration Separation
+
+Начиная с версии 2025-01-03, конфигурация nginx была выделена в отдельные файлы для предотвращения конфликтов upstream в nginx-proxy.
+
+**Структура nginx конфигурационных файлов:**
+
+```text
+.env.nginx.development     # nginx-specific настройки для разработки
+.env.nginx.production      # nginx-specific настройки для продакшена
 ```
 
-#### 3. Install System Dependencies
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install imagemagick heif-convert
+**Критические отличия nginx конфигурации:**
 
-# macOS
-brew install imagemagick heif-convert
+| Сервис | Файл конфигурации | VIRTUAL_HOST |
+|--------|------------------|--------------|
+| `web` | `.env.development` / `.env.production` | ✅ Присутствует |
+| `nginx-proxy` | `.env.nginx.development` / `.env.nginx.production` | ❌ Отсутствует |
+| `nginx-letsencrypt` | `.env.nginx.development` / `.env.nginx.production` | ❌ Отсутствует |
 
-# CentOS/RHEL
-sudo yum install ImageMagick heif-convert
+**Почему это важно:**
+
+- nginx-proxy автоматически обнаруживает контейнеры с переменной `VIRTUAL_HOST`
+- Если несколько контейнеров имеют одинаковый `VIRTUAL_HOST`, nginx-proxy добавляет их всех в upstream
+- POST запросы могут попадать на неправильные контейнеры (nginx-letsencrypt, nginx-proxy)
+- Контактная форма перестает работать
+
+**Содержимое файлов nginx конфигурации:**
+
+`.env.nginx.development`:
+
+```ini
+# Nginx configuration for development (БЕЗ VIRTUAL_HOST!)
+NGINX_HTTP_PORT=80
+NGINX_HTTPS_PORT=443
+DEFAULT_HOST=localhost
+ALLOW_SELF_SIGNED=true
+SSL_MODE=development
+LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
+DEBUG=true
 ```
 
-#### 4. Configure Environment
-```bash
-# Copy environment template
-cp .env.development .env
+`.env.nginx.production`:
 
-# Edit configuration
-nano .env
+```ini
+# Nginx configuration (БЕЗ VIRTUAL_HOST!)
+NGINX_HTTP_PORT=80
+NGINX_HTTPS_PORT=443
+DEFAULT_HOST=sad-tresinky-cetechovice.cz
+ALLOW_SELF_SIGNED=false
+SSL_MODE=production
+LETSENCRYPT_EMAIL=admin@sad-tresinky-cetechovice.cz
+DEBUG=false
 ```
 
-#### 5. Initialize Database
-```bash
-# Create database directory
-mkdir -p instance
+### Development Environment
 
-# Initialize database
-python3 -c "from app import app, db; app.app_context().push(); db.create_all()"
-```
+The development environment is configured for local development and testing. It includes:
 
-#### 6. Start Development Server
-```bash
-# Start application
-python3 app.py
+- Debug mode enabled
+- Local database
+- Development-specific settings
 
-# Or use Docker
-docker compose up -d
-```
+Configuration file: `.env.development`
 
-### Development Configuration
-
-#### Environment Variables
-```bash
-# .env.development
+```ini
 FLASK_ENV=development
+FLASK_APP=app.py
+FLASK_DEBUG=1
 SECRET_KEY=your-development-secret-key
-DATABASE_URL=sqlite:///instance/tresinky.db
-UPLOAD_FOLDER=static/uploads
-MAX_CONTENT_LENGTH=400000000
-DEBUG=True
+DATABASE_URL=sqlite:///tresinky.db
+DOMAIN=localhost:5000
+USE_HTTPS=true
 ```
 
-#### Docker Configuration
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - .:/app
-      - ./instance:/app/instance
-    environment:
-      - FLASK_ENV=development
-    depends_on:
-      - db
-  
-  db:
-    image: sqlite:latest
-    volumes:
-      - ./instance:/data
-```
+### Production Environment
 
-## 🏭 Production Environment
+The production environment is configured for deployment to the live server. It includes:
 
-### Prerequisites
-- **Ubuntu 20.04+** - Recommended server OS
-- **Docker & Docker Compose** - For containerized deployment
-- **Nginx** - For reverse proxy and SSL termination
-- **SSL Certificate** - For HTTPS support
-- **Domain Name** - For production access
+- Debug mode disabled
+- Production database
+- HTTPS enabled
+- Production-specific security settings
 
-### Installation Steps
+Configuration file: `.env.production`
 
-#### 1. Server Setup
-```bash
-# Update system
-sudo apt-get update && sudo apt-get upgrade -y
-
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
-
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/v2.0.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-#### 2. Install Nginx
-```bash
-# Install Nginx
-sudo apt-get install nginx
-
-# Start and enable Nginx
-sudo systemctl start nginx
-sudo systemctl enable nginx
-```
-
-#### 3. Deploy Application
-```bash
-# Clone repository
-git clone https://github.com/your-username/tresinky-web.git
-cd tresinky-web
-
-# Copy production configuration
-cp .env.production .env
-
-# Start application
-docker compose up -d
-```
-
-#### 4. Configure Nginx
-```bash
-# Create Nginx configuration
-sudo nano /etc/nginx/sites-available/tresinky
-
-# Enable site
-sudo ln -s /etc/nginx/sites-available/tresinky /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-#### 5. Setup SSL Certificate
-```bash
-# Install Certbot
-sudo apt-get install certbot python3-certbot-nginx
-
-# Obtain SSL certificate
-sudo certbot --nginx -d your-domain.com
-
-# Test automatic renewal
-sudo certbot renew --dry-run
-```
-
-### Production Configuration
-
-#### Environment Variables
-```bash
-# .env.production
+```ini
 FLASK_ENV=production
+FLASK_APP=app.py
+FLASK_DEBUG=0
 SECRET_KEY=your-production-secret-key
-DATABASE_URL=sqlite:///instance/tresinky.db
-UPLOAD_FOLDER=static/uploads
-MAX_CONTENT_LENGTH=400000000
-DEBUG=False
+DATABASE_URL=sqlite:///tresinky.db
+DOMAIN=sad-tresinky-cetechovice.cz
+USE_HTTPS=true
 ```
 
-#### Nginx Configuration
-```nginx
-# /etc/nginx/sites-available/tresinky
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
+## Docker Configuration
 
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-    
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-    
-    location /static/ {
-        alias /path/to/your/app/static/;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-}
+The application uses Docker for containerization and deployment. The `docker-compose.yml` file defines three services:
+
+1. Web Service (Flask Application)
+   - Builds from the Dockerfile
+   - Mounts the application code
+   - Uses environment-specific configuration
+   - Connects to the database
+
+2. Nginx Service
+   - Serves as reverse proxy
+   - Handles SSL/TLS
+   - Serves static files
+   - Configurable ports
+
+3. Database Service
+   - SQLite database
+   - Persistent storage
+
+## SSL Configuration
+
+SSL certificates will be managed by Let's Encrypt for the production environment.
+The `scripts/generate_ssl.sh` script can generate self-signed certificates for development:
+
+```bash
+./scripts/generate_ssl.sh
 ```
 
-## 🔧 Environment Management
+## Environment Switching
 
-### Switching Environments
+Use the `scripts/switch_env.sh` script to switch between environments:
 
-#### Using Environment Scripts
 ```bash
 # Switch to development
 ./scripts/switch_env.sh development
 
 # Switch to production
 ./scripts/switch_env.sh production
-
-# Check current environment
-./scripts/switch_env.sh status
 ```
 
-#### Manual Environment Switch
-```bash
-# Development
-ln -sf .env.development .env
-export FLASK_ENV=development
+The script will:
 
-# Production
-ln -sf .env.production .env
-export FLASK_ENV=production
+1. Stop existing containers
+2. **Обновить символическую ссылку `.env`** для указания на соответствующий файл конфигурации:
+   - Для development: создать ссылку `.env` → `.env.development`
+   - Для production: создать ссылку `.env` → `.env.production`
+3. Load the appropriate environment configuration
+4. Start containers with new settings
+
+**Проверка текущего окружения:**
+
+```bash
+# Проверить, на какой файл указывает .env
+ls -la .env
+
+# Результат для development:
+# .env -> .env.development
+
+# Результат для production:
+# .env -> .env.production
 ```
 
-### Environment Validation
+## Nginx Configuration
 
-#### Check Environment Status
+The Nginx configuration (`config/nginx.conf`) includes:
+
+- HTTP/2.0 support
+- SSL/TLS configuration
+- Security headers
+- Static file serving
+- Proxy settings
+
+## Security Measures
+
+### Development
+
+- Debug mode enabled for easier development
+- Local database
+- HTTP for local access
+- HTTPS for local testing
+- Development-specific security settings
+
+### Production
+
+- Debug mode disabled
+- HTTPS required
+- Secure headers enabled
+- Production-specific security settings
+- SSL/TLS configuration
+
+## Production Deployment Process
+
+1. Prepare the environment. Switch to production environment:
+
+   ```bash
+   ./scripts/switch_env.sh production
+   ```
+
+2. Start the services:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. Verify the deployment:
+   - Check application logs
+   - Verify SSL configuration
+   - Test all functionality
+
+## Monitoring and Maintenance
+
+### Logs
+
+- Application logs: `docker compose logs web`
+- Nginx logs: `docker compose logs nginx`
+
+### Updates
+
+1. Pull latest changes
+2. Rebuild containers:
+
+   ```bash
+   ./prod_rebuild.sh
+   ```
+
+### Backup
+
+- Database: `./instance/tresinky.db`
+- SSL certificates: `./ssl/`
+
+## Common Configuration Issues and Solutions
+
+### Problem: Contact Form Not Working (POST requests don't reach Flask)
+
+**Симптомы:**
+
+- Контактная форма загружается, но не отправляется
+- В логах Flask видны только GET запросы к `/kontakt`, но нет POST
+- curl тест показывает перенаправления: `curl -s vs curl -sL`
+
+**Причина:**
+nginx-proxy создает upstream с несколькими контейнерами, если они имеют одинаковый `VIRTUAL_HOST`
+
+**Диагностика:**
+
 ```bash
-# Check Python version
-python3 --version
+# Проверить nginx upstream
+docker compose exec nginx-proxy cat /etc/nginx/conf.d/default.conf | grep -A10 "upstream"
 
-# Check dependencies
-pip list
+# НЕПРАВИЛЬНО (несколько серверов):
+# upstream sad-tresinky-cetechovice.cz {
+#     server 172.18.0.2:5000;  # web
+#     server 172.18.0.4:80;    # nginx-letsencrypt
+#     server 172.18.0.3:80;    # nginx-proxy
+# }
 
-# Check database
-sqlite3 instance/tresinky.db ".tables"
-
-# Check application
-python3 -c "from app import app; print('App loaded successfully')"
+# ПРАВИЛЬНО (только web):
+# upstream sad-tresinky-cetechovice.cz {
+#     server 172.18.0.2:5000;  # ТОЛЬКО web
+#     keepalive 2;
+# }
 ```
 
-#### Validate Configuration
+**Решение:**
+
 ```bash
-# Check environment variables
-python3 -c "
-import os
-from config.config import get_config
-config = get_config()
-print('Environment:', os.getenv('FLASK_ENV', 'development'))
-print('Debug mode:', config.DEBUG)
-print('Database URL:', config.DATABASE_URL)
+# Автоматическое исправление
+./scripts/fix_nginx_upstream.sh
+
+# Или ручное исправление:
+# 1. Создать .env.nginx.production без VIRTUAL_HOST
+# 2. Обновить docker-compose.yml для использования раздельных env файлов
+# 3. Перезапустить контейнеры
+```
+
+### Problem: Wrong Environment Detection
+
+**Симптомы:**
+
+- Приложение запускается с неправильными настройками
+- SSL сертификаты не соответствуют окружению
+
+**Диагностика:**
+
+```bash
+# Проверить текущий environment
+ls -la .env
+readlink .env
+
+# Проверить какие переменные загружены
+docker compose exec web env | grep FLASK_ENV
+```
+
+**Решение:**
+
+```bash
+# Переключиться на правильное окружение
+./scripts/switch_env.sh production  # или development
+```
+
+### Problem: SSL Certificate Issues
+
+**Development:**
+
+```bash
+# Сгенерировать self-signed сертификаты
+./scripts/generate_ssl.sh
+
+# Проверить сертификаты
+ls -la ssl/
+```
+
+**Production:**
+
+```bash
+# Проверить статус Let's Encrypt
+docker compose logs nginx-letsencrypt
+
+# Перезапустить получение сертификатов
+docker compose restart nginx-letsencrypt
+```
+
+### Problem: Email Configuration Issues
+
+**Диагностика:**
+
+```bash
+# Тест SMTP подключения
+docker compose exec web python3 -c "
+import smtplib, os
+try:
+    server = smtplib.SMTP(os.getenv('MAIL_SERVER'), int(os.getenv('MAIL_PORT')))
+    server.starttls()
+    server.login(os.getenv('MAIL_USERNAME'), os.getenv('MAIL_PASSWORD'))
+    print('✅ SMTP connection successful')
+    server.quit()
+except Exception as e:
+    print(f'❌ SMTP error: {e}')
 "
 ```
 
-## 🐳 Docker Development
+### Configuration Validation
 
-### Dockerfile
-```dockerfile
-FROM python:3.9-slim
+**Проверка правильности конфигурации:**
 
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    imagemagick \
-    heif-convert \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy application
-COPY . .
-
-# Create necessary directories
-RUN mkdir -p instance logs static/uploads
-
-# Set permissions
-RUN chmod +x scripts/*.sh
-
-# Expose port
-EXPOSE 5000
-
-# Start application
-CMD ["python3", "app.py"]
-```
-
-### Docker Compose
-```yaml
-version: '3.8'
-services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-    volumes:
-      - .:/app
-      - ./instance:/app/instance
-      - ./logs:/app/logs
-    environment:
-      - FLASK_ENV=development
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./config/nginx.conf:/etc/nginx/nginx.conf
-      - ./static:/var/www/static
-    depends_on:
-      - web
-    restart: unless-stopped
-```
-
-## 📊 Monitoring & Logging
-
-### Application Logs
 ```bash
-# View application logs
-tail -f logs/app.log
+# 1. Проверить environment
+echo "Current environment: $(readlink .env)"
 
-# View database logs
-tail -f logs/database.log
+# 2. Проверить VIRTUAL_HOST в контейнерах
+echo "=== web container VIRTUAL_HOST ==="
+docker compose exec web env | grep VIRTUAL_HOST
 
-# View error logs
-tail -f logs/errors.log
+echo "=== nginx-proxy container VIRTUAL_HOST ==="
+docker compose exec nginx-proxy env | grep VIRTUAL_HOST || echo "VIRTUAL_HOST not set (correct)"
+
+echo "=== nginx-letsencrypt container VIRTUAL_HOST ==="
+docker compose exec nginx-letsencrypt env | grep VIRTUAL_HOST || echo "VIRTUAL_HOST not set (correct)"
+
+# 3. Проверить nginx upstream
+echo "=== nginx upstream configuration ==="
+docker compose exec nginx-proxy cat /etc/nginx/conf.d/default.conf | grep -A10 "upstream"
 ```
 
-### System Monitoring
-```bash
-# Check Docker containers
-docker ps
+**Ожидаемые результаты:**
 
-# Check application status
-curl -I http://localhost:5000
+- `web` контейнер: VIRTUAL_HOST установлен
+- `nginx-proxy` контейнер: VIRTUAL_HOST НЕ установлен
+- `nginx-letsencrypt` контейнер: VIRTUAL_HOST НЕ установлен
+- nginx upstream: только один сервер (web контейнер)
+- Configuration files: `.env.*`
 
-# Check disk usage
-df -h
-
-# Check memory usage
-free -h
-```
-
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-#### Python Version Issues
-```bash
-# Check Python version
-python3 --version
+1. SSL Certificate Issues
+   - Verify certificate paths
+   - Check certificate permissions
+   - Ensure proper certificate format
 
-# Install correct version
-sudo apt-get install python3.9 python3.9-venv
+2. Database Issues
+   - Check database file permissions
+   - Verify database path
+   - Ensure proper database initialization
+
+3. Nginx Issues
+   - Check Nginx configuration
+   - Verify port availability
+   - Check SSL configuration
+
+### Debugging
+
+1. Development Environment
+   - Enable debug mode
+   - Check application logs
+   - Use development tools
+
+2. Production Environment
+   - Check Nginx logs
+   - Monitor application logs
+   - Verify SSL configuration
+
+## Configuration Testing
+
+### Automated Testing
+
+Приложение включает автоматизированные тесты для проверки корректности настроек безопасности в разных окружениях:
+
+```bash
+# Запуск тестов конфигурации
+python -m pytest tests/test_app.py::test_configuration_environments -v
+python -m pytest tests/test_app.py::test_security_settings_logic -v
+
+# Запуск всех тестов
+python -m pytest tests/test_app.py -v
 ```
 
-#### Database Issues
-```bash
-# Check database file
-ls -la instance/tresinky.db
+### Manual Configuration Verification
 
-# Fix permissions
-chmod 664 instance/tresinky.db
-chown $USER:$USER instance/tresinky.db
+#### Проверка настроек Development окружения
+
+```bash
+python -c "
+from config.config import DevelopmentConfig
+config = DevelopmentConfig()
+print('=== DEVELOPMENT CONFIGURATION ===')
+print(f'DEBUG: {config.DEBUG}')
+print(f'USE_HTTPS: {config.USE_HTTPS}')
+print(f'SESSION_COOKIE_SECURE: {config.SESSION_COOKIE_SECURE}')
+print(f'REMEMBER_COOKIE_SECURE: {config.REMEMBER_COOKIE_SECURE}')
+print(f'DOMAIN: {config.DOMAIN}')
+print('✅ Для HTTP окружения secure cookies должны быть FALSE')
+"
 ```
 
-#### Docker Issues
+#### Проверка настроек Production окружения
+
 ```bash
-# Check Docker status
-sudo systemctl status docker
-
-# Restart Docker
-sudo systemctl restart docker
-
-# Clean up containers
-docker system prune -a
+python -c "
+from config.config import ProductionConfig
+config = ProductionConfig()
+print('=== PRODUCTION CONFIGURATION ===')
+print(f'DEBUG: {config.DEBUG}')
+print(f'USE_HTTPS: {config.USE_HTTPS}')
+print(f'SESSION_COOKIE_SECURE: {config.SESSION_COOKIE_SECURE}')
+print(f'REMEMBER_COOKIE_SECURE: {config.REMEMBER_COOKIE_SECURE}')
+print(f'DOMAIN: {config.DOMAIN}')
+print(f'Has PREFERRED_URL_SCHEME: {hasattr(config, \"PREFERRED_URL_SCHEME\")}')
+print('✅ Для HTTPS окружения secure cookies должны быть TRUE')
+print('✅ PREFERRED_URL_SCHEME не должно быть установлено (ProxyFix)')
+"
 ```
 
-#### Nginx Issues
+#### Проверка активной конфигурации
+
 ```bash
-# Check Nginx status
-sudo systemctl status nginx
-
-# Test configuration
-sudo nginx -t
-
-# Restart Nginx
-sudo systemctl restart nginx
+python -c "
+from config.config import get_config
+import os
+print(f'Current FLASK_ENV: {os.getenv(\"FLASK_ENV\", \"development\")}')
+config_class = get_config()
+config = config_class()
+print(f'Active config class: {config_class.__name__}')
+print(f'SESSION_COOKIE_SECURE: {config.SESSION_COOKIE_SECURE}')
+print(f'USE_HTTPS: {config.USE_HTTPS}')
+"
 ```
 
-### Performance Issues
+### Expected Configuration Results
 
-#### Memory Usage
+| Окружение | DEBUG | USE_HTTPS | SESSION_COOKIE_SECURE | REMEMBER_COOKIE_SECURE |
+|-----------|-------|-----------|---------------------|----------------------|
+| Development | `True` | `False` | `False` | `False` |
+| Production | `False` | `True` | `True` | `True` |
+| Testing | `True` | `False` | (наследует) | (наследует) |
+
+### Security Configuration Validation
+
+#### Проверка ProxyFix совместимости
+
 ```bash
-# Check memory usage
-free -h
-
-# Check Docker memory
-docker stats
-
-# Optimize memory usage
-# Add swap file if needed
-sudo fallocate -l 2G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
+# PREFERRED_URL_SCHEME не должно быть установлено
+python -c "
+from config.config import ProductionConfig
+config = ProductionConfig()
+if hasattr(config, 'PREFERRED_URL_SCHEME'):
+    print('❌ PREFERRED_URL_SCHEME установлено - конфликт с ProxyFix!')
+else:
+    print('✅ PREFERRED_URL_SCHEME не установлено - ProxyFix совместимость OK')
+"
 ```
 
-#### Disk Space
+#### Проверка настроек в разных окружениях
+
 ```bash
-# Check disk usage
-df -h
+# Test development
+export FLASK_ENV=development
+python -c "from config.config import get_config; print('Config:', get_config().__name__)"
 
-# Clean up Docker
-docker system prune -a
+# Test production
+export FLASK_ENV=production
+python -c "from config.config import get_config; print('Config:', get_config().__name__)"
 
-# Clean up logs
-sudo journalctl --vacuum-time=7d
+# Reset environment
+unset FLASK_ENV
 ```
 
-## 📚 Additional Resources
+Подробные инструкции по тестированию см. в [README.md - Configuration Testing](../README.md#configuration-testing).
 
-### Documentation
-- [Deployment Guide](deployment_guide.md) - Production deployment
-- [Database Documentation](database.md) - Database setup
-- [Performance Metrics](PERFORMANCE_METRICS.md) - Performance monitoring
+## Best Practices
 
-### Scripts
-- `scripts/setup_env.sh` - Environment setup script
-- `scripts/switch_env.sh` - Environment switching script
-- `scripts/backup_database.sh` - Database backup script
+1. Security
+   - Use strong secret keys
+   - Enable HTTPS in production
+   - Implement security headers
+   - Regular security updates
 
-### Support
-- Check application logs for error details
-- Review system logs for infrastructure issues
-- Contact development team for complex setup issues
+2. Performance
+   - Enable HTTP/2.0
+   - Configure caching
+   - Optimize static files
+   - Monitor resource usage
+
+3. Maintenance
+   - Regular backups
+   - Log monitoring
+   - Security updates
+   - Performance optimization
 
 ---
 
-*Last updated: [Current Date]*
-*Next review: [Next Review Date]*
+## 🔗 См. также
+
+- **🏠 [Главная](../README.md)** - Основная документация проекта
+- **🌐 [Deployment Guide](deployment_guide.md)** - Полное руководство по деплою
+- **💻 [Implementation Plan](../IMPLEMENTATION_PLAN.md)** - Техническая документация
+- **📋 [Changelog](../CHANGELOG.md)** - История изменений проекта
+- **⬅️ [Назад: Changelog](../CHANGELOG.md)** | **➡️ [Далее: Deployment Guide](deployment_guide.md)**
