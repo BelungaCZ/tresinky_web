@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - Podpora{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+    
+    .donation-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .help-options {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .help-options li {
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .help-options li:last-child {
+        border-bottom: none;
+    }
+    
+    .help-options i {
+        color: #0d6efd;
+        margin-right: 10px;
+    }
+    
+    /* QR Code Styles */
+    .qr-code-section {
+        text-align: center;
+        margin: 20px 0;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .qr-code-image {
+        max-width: 200px;
+        cursor: pointer;
+        transition: transform 0.3s;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+    }
+    
+    .qr-code-image:hover {
+        transform: scale(1.05);
+        border-color: #0d6efd;
+    }
+    
+    .qr-code-modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.8);
+    }
+    
+    .qr-code-zoom {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    
+    .copy-btn {
+        margin: 5px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">PODPOŘTE NAŠI ČINNOST</h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6" data-aos="fade-right">
+                <div class="donation-card">
+                    <h2>Finanční podpora</h2>
+                    <p>Jsme vděčni za každý, i ten nejmenší příspěvek. Prostředky budou použity na získání sazenic starých odrůd, jejich výsadbě a péči o ně po výsadbě.</p>
+                    
+                    <p>Veškeré dary a jejich použití jsou veřejně evidovány na našem TRANSPARENTNÍM ÚČTU:</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>Číslo účtu:</strong> 2903205559/2010<br>
+                        <strong>Variabilní symbol:</strong> 2025<br>
+                        <a href="https://ib.fio.cz/ib/transparent?a=2903205559&f=16.06.2025" target="_blank">Zobrazit transparentní účet</a>
+                    </div>
+                    
+                    <p class="small text-muted">Při platbě, prosím, uveďte své jméno nebo název firmy do zprávy pro příjemce, abychom Vás mohli zařadit do seznamu podporovatelů. Pokud si přejete zůstat anonymní, stačí nám to sdělit.</p>
+                    
+                    <div class="qr-code-section">
+                        <h4>Rychlý převod prostřednictvím QR kódu</h4>
+                        <img src="{{ url_for('static', filename='images/QRPlatba_na_ucet_2903205559.png') }}" 
+                             alt="QR kód pro platbu" 
+                             class="qr-code-image" 
+                             id="qrCode">
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary copy-btn" onclick="copyAccountNumber()">
+                                <i class="bi bi-clipboard"></i> Kopírovat číslo účtu
+                            </button>
+                            <button class="btn btn-outline-primary copy-btn" onclick="copyVariableSymbol()">
+                                <i class="bi bi-clipboard"></i> Kopírovat variabilní symbol
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <h4 class="text-primary">DĚKUJEME, ŽE POMÁHÁTE RŮST NĚČEMU, CO MÁ HLUBOKÝ SMYSL.</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6" data-aos="fade-left">
+                <div class="donation-card">
+                    <h2>Jak nám také můžete pomoci</h2>
+                    
+                    <div class="mb-4">
+                        <h4>Dobrovolnická pomoc</h4>
+                        <p>O sad i les pečuje řada nadšených místních i přespolních dobrovolníků. Pokud toužíte po fyzické a smysluplné aktivitě v souladu s přírodou, budeme rádi, pokud se nám ozvete a nabídnete svou pomoc na e-mail: <a href="mailto:tresinky-cetechovice@seznam.cz">tresinky-cetechovice@seznam.cz</a> nebo prostřednictvím odkazu <a href="{{ url_for('contact') }}">Napište nám</a>.</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4>Informace o starých odrůdách</h4>
+                        <p>Sad Třešinky je zařazen do sítě genofondových sadů České republiky. Velmi by nás potěšilo, pokud by jste nám dali vědět o stromech původních krajových odrůd, které bychom mohli v sadu vysadit.</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h4>Sdílení informací</h4>
+                        <p>Sdílejte informace o našem projektu s přáteli a známými.</p>
+                    </div>
+                </div>
+
+                <div class="donation-card mt-4">
+                    <h2>Seznam podporovatelů</h2>
+                    <p>Seznam dárců najdete zde:</p>
+                    
+                    
+                    {% if donors %}
+                        <div class="mt-3">
+                            <ul class="list-group list-group-flush">
+                                {% for donor in donors %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold">{{ donor.name }}</span>
+                                        <small class="text-muted d-block">{% if donor.donation_date.month == 1 %}leden
+                                            {% elif donor.donation_date.month == 2 %}únor
+                                            {% elif donor.donation_date.month == 3 %}březen
+                                            {% elif donor.donation_date.month == 4 %}duben
+                                            {% elif donor.donation_date.month == 5 %}květen
+                                            {% elif donor.donation_date.month == 6 %}červen
+                                            {% elif donor.donation_date.month == 7 %}červenec
+                                            {% elif donor.donation_date.month == 8 %}srpen
+                                            {% elif donor.donation_date.month == 9 %}září
+                                            {% elif donor.donation_date.month == 10 %}říjen
+                                            {% elif donor.donation_date.month == 11 %}listopad
+                                            {% elif donor.donation_date.month == 12 %}prosinec
+                                            {% endif %} {{ donor.donation_date.year }}</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ "%.0f"|format(donor.amount) }} Kč
+                                        
+                                    </span>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            <p class="mt-3 text-muted">Seznam bude průběžně aktualizován s dalšími dárci.</p>
+                            <p class="mb-0">Děkujeme všem, kteří nás podporují!</p>
+                        </div>
+                    {% else %}
+                        <div class="mt-3">
+                            <p class="text-muted">Zatím nemáme žádné dárce v databázi.</p>
+                            <p class="text-muted">Seznam bude průběžně aktualizován s dalšími dárci.</p>
+                            <p class="mb-0">Děkujeme všem, kteří nás podporují!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12" data-aos="fade-up">
+                <div class="donation-card">
+                    <h2>Co můžeme udělat my pro Vás</h2>
+                    <p>Za Vaši podporu Vám můžeme nabídnout:</p>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                                        <img src="{{ url_for('static', filename='images/apple.png') }}" alt="Jablko" style="width: 80px; height: 80px;">
+                                    </div>
+                                    <h5 class="card-title">Ovoce ze sadu</h5>
+                                    <p class="card-text">Podíl na úrodě z obnoveného sadu za zvýhodněnou cenu</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-leaf display-4 text-primary" viewBox="0 0 16 16">
+                                            <path d="M1.4 1.7c.216.289.65.84 1.725 1.274 1.093.44 2.884.774 5.834.528l.37-.023c1.823-.06 3.117.598 3.956 1.579C14.16 6.082 14.5 7.41 14.5 8.5c0 .58-.032 1.285-.229 1.997q.198.248.382.54c.756 1.2 1.19 2.563 1.348 3.966a1 1 0 0 1-1.98.198c-.13-.97-.397-1.913-.868-2.77C12.173 13.386 10.565 14 8 14c-1.854 0-3.32-.544-4.45-1.435-1.125-.887-1.89-2.095-2.391-3.383C.16 6.62.16 3.646.509 1.902L.73.806zm-.05 1.39c-.146 1.609-.008 3.809.74 5.728.457 1.17 1.13 2.213 2.079 2.961.942.744 2.185 1.22 3.83 1.221 2.588 0 3.91-.66 4.609-1.445-1.789-2.46-4.121-1.213-6.342-2.68-.74-.488-1.735-1.323-1.844-2.308-.023-.214.237-.274.38-.112 1.4 1.6 3.573 1.757 5.59 2.045 1.227.215 2.21.526 3.033 1.158.058-.39.075-.782.075-1.158 0-.91-.288-1.988-.975-2.792-.626-.732-1.622-1.281-3.167-1.229l-.316.02c-3.05.253-5.01-.08-6.291-.598a5.3 5.3 0 0 1-1.4-.811"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="card-title">Materiál na štěpování</h5>
+                                    <p class="card-text">Možnost získat rouby konkrétních starých a krajových odrůd</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body text-center d-flex flex-column">
+                                    <div class="mb-3" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="bi bi-book display-4 text-primary"></i>
+                                    </div>
+                                    <h5 class="card-title">Znalosti a zkušenosti</h5>
+                                    <p class="card-text">Rádi se s Vámi podělíme o znalosti a zkušenosti s obnovou starého zanedbaného sadu a jeho přeměnu na krásný kout živé přírody ale i o znalosti s péčí od ovocné stromy.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('contact') }}" class="btn btn-primary btn-lg">Napište nám</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="qr-code-modal">
+    <img src="{{ url_for('static', filename='images/QRPlatba_na_ucet_2903205559.png') }}" 
+         alt="QR kód pro platbu" 
+         class="qr-code-zoom" 
+         id="qrCodeZoom">
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+    
+    // QR Code functionality
+    document.getElementById('qrCode').addEventListener('click', function() {
+        document.getElementById('qrModal').style.display = 'block';
+    });
+    
+    document.getElementById('qrModal').addEventListener('click', function() {
+        this.style.display = 'none';
+    });
+    
+    function copyAccountNumber() {
+        navigator.clipboard.writeText('2903205559/2010').then(function() {
+            showCopySuccess('Číslo účtu zkopírováno');
+        });
+    }
+    
+    function copyVariableSymbol() {
+        navigator.clipboard.writeText('2025').then(function() {
+            showCopySuccess('Variabilní symbol zkopírován');
+        });
+    }
+    
+    function showCopySuccess(message) {
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-success position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 1060; min-width: 250px;';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+</script>
+{% endblock %} 

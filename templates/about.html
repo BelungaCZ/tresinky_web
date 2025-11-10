@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Třešinky Cetechovice - O nás{% endblock %}
+
+{% block extra_css %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<style>
+    .section {
+        padding: 100px 0;
+    }
+
+    .about-inter-font h1,
+    .about-inter-font .lead {
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    .image-text-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    .image-text-block img {
+        width: 100%;
+        max-width: 400px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+
+    .image-text-block .text {
+        flex: 1;
+        min-width: 0;
+    }
+
+    @media (max-width: 768px) {
+        .image-text-block {
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .image-text-block img {
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section about-inter-font">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center" data-aos="fade-up">
+                <h1 class="display-4">O nás</h1>
+                <p class="lead">Historie a současnost spolku</p>
+            </div>
+        </div>
+
+        <!-- Úvodní text -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto" data-aos="fade-up">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Spolek singulárních podílníků Třešinky Cetechovice</h2>
+                        <p class="card-text">
+                            Spolek byl po vzoru našich předků znovu založen 28. května 2017 na ustavující schůzi v Cetechovicích. Byly schváleny všechny potřebné vnitřní směrnice, zvolen výbor a kontrolní komise a také koncepce rozvoje sadu a desetiletý plán péče o les.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Výbor spolku -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="card mb-4" data-aos="fade-right">
+                    <div class="card-body">
+                        <h2 class="fw-bold mb-3">Výbor spolku</h2>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Předseda spolku:</strong> Ing. Jaromír Opravil</li>
+                            <li><strong>Místopředseda spolku:</strong> Bc. Ivana Lefnerová</li>
+                            <li><strong>Pokladník:</strong> p. Jitka Fornálová</li>
+                            <li><strong>Člen výboru:</strong> Ing. Zuzana Špaková</li>
+                            <li><strong>Člen výboru:</strong> p. František Havránek</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revizní komise -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="card mb-4" data-aos="fade-left">
+                    <div class="card-body">
+                        <h2 class="fw-bold mb-3">Revizní komise</h2>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Předseda revizní komise:</strong> Ing. Jiří Babušník</li>
+                            <li><strong>Člen revizní komise:</strong> p. Jitka Daňhelová</li>
+                            <li><strong>Člen revizní komise:</strong> p. Libor Malík</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spolupracovník výboru pro péči o les -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="card mb-4" data-aos="fade-right">
+                    <div class="card-body">
+                        <h2 class="fw-bold mb-3">Spolupracovníci výboru pro péči o les</h2>
+                        <ul class="list-unstyled mb-0">
+                            <li>Ing. Vladimír Váňa</li>
+                            <li>p. Jan Mach</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Naše činnost -->
+        <div class="row">
+            <div class="col-lg-10 mx-auto">
+                <div class="card mb-4" data-aos="fade-up">
+                    <div class="card-body">
+                        <h2 class="fw-bold mb-3">Naše činnosti</h2>
+                        <p>
+                            Na obnově sadu se nepodílí jen výbor a kontrolní komise spolku, jež se pravidelně scházejí.
+                            Aktivně se zapojila řada dalších spoluvlastníků a přátel sadu a lesa spravovaného spolkem.
+                        </p>
+                        <p>
+                            Setkání jsou vždy příjemná a odměnou je postupně se měnící tvář dříve zanedbaného území
+                            katastru Cetechovic.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    AOS.init({
+        duration: 1000,
+        once: true
+    });
+</script>
+{% endblock %}
