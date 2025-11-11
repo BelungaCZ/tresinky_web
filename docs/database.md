@@ -62,6 +62,17 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 | `created_at` | DATETIME | DEFAULT NOW | Creation timestamp |
 | `updated_at` | DATETIME | DEFAULT NOW | Last update timestamp |
 
+### Donor Table
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | INTEGER | PRIMARY KEY | Unique identifier |
+| `name` | VARCHAR(100) | NOT NULL | Donor name |
+| `amount` | FLOAT | NOT NULL | Donation amount in CZK |
+| `donation_date` | DATETIME | NOT NULL | Date of donation |
+| `bank_reference` | VARCHAR(50) | UNIQUE, NULLABLE | Bank transaction reference (for duplicate prevention) |
+| `created_at` | DATETIME | DEFAULT NOW | Record creation timestamp |
+
 **Example Records**:
 
 ```sql
@@ -302,12 +313,12 @@ For production deployments where database tables are missing, use the automated 
    - Creates database backup before changes
 
 2. **Table Creation**:
-   - Checks existing tables (`contact_message`, `album`, `gallery_image`)
+   - Checks existing tables (`contact_message`, `album`, `gallery_image`, `donor`)
    - Creates missing tables using `db.create_all()`
    - Verifies all tables were created successfully
 
 3. **Testing**:
-   - Tests basic CRUD operations for all models
+   - Tests basic CRUD operations for all models (ContactMessage, Album, GalleryImage, Donor)
    - Verifies foreign key relationships
    - Cleans up test data after verification
 
@@ -458,6 +469,7 @@ with app.app_context():
 |------|---------|---------|--------|
 | 2025-06-19 | 1.0 | Initial migration script | ✅ Complete |
 | 2025-06-19 | 1.1 | Added Album table support | ✅ Complete |
+| 2025-11-11 | 1.2 | Added Donor table support | ✅ Complete |
 
 ---
 
